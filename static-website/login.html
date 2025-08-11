@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Andos – Login</title>
+  <style>
+    :root{ --accent:#00E5E6; --brand:#F47521; }
+    body{ margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Open Sans',sans-serif; background:#000; color:#eee; display:grid; place-items:center; height:100dvh; }
+    .card{ width:min(92vw,420px); background:#111; border:1px solid #333; border-radius:12px; padding:24px; }
+    h1{ margin:0 0 8px; color:var(--accent); font-size:1.3rem; }
+    p{ color:#bbb; margin:0 0 14px; }
+    label{ display:block; margin:10px 0 6px; }
+    input,button{ width:100%; padding:10px; border-radius:8px; border:1px solid #333; background:#1a1a1a; color:#eee; }
+    button{ margin-top:12px; background:var(--accent); border:none; cursor:pointer; font-weight:700; }
+    a{ color:var(--accent); }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Login to Andos</h1>
+    <p>Demo page (placeholder for future OAuth/Cognito).</p>
+
+    <label>Username</label>
+    <input id="u" type="text" placeholder="AndosUser">
+    <label>Password</label>
+    <input id="p" type="password" placeholder="••••••••">
+
+    <button id="loginBtn">Login</button>
+    <p style="margin-top:10px;font-size:.9rem;">
+      <a href="/" id="back">← Back to site</a>
+    </p>
+  </div>
+
+  <script>
+    // In the future, handle OAuth callback or start a redirect to your IdP.
+    // For now, pretend login and return to the SPA (optionally respect ?returnTo=)
+    document.getElementById('loginBtn').onclick = () => {
+      const params = new URLSearchParams(location.search);
+      const returnTo = params.get('returnTo') || '/';
+      // Demo-only localStorage toggle to mirror SPA
+      localStorage.setItem('loggedIn', 'true');
+      localStorage.setItem('username', document.getElementById('u').value || 'AndosUser');
+      location.href = returnTo;
+    };
+    document.getElementById('back').onclick = (e) => {
+      e.preventDefault();
+      history.length > 1 ? history.back() : location.assign('/');
+    };
+  </script>
+</body>
+</html>
