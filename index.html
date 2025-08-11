@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Andos - Top 10 Anime</title>
+  <style>
+    body {
+      font-family: 'Open Sans', sans-serif;
+      margin: 0;
+      background-color: #000;
+      color: #f0f0f0;
+    }
+
+    header {
+      background-color: #F47521;
+      color: white;
+      padding: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .logo-link {
+      text-decoration: none;
+    }
+
+    .header-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      position: relative;
+    }
+
+    .header-actions input {
+      padding: 8px 10px;
+      border: none;
+      border-radius: 6px;
+      outline: none;
+      width: 200px;
+    }
+
+    .suggestions {
+      position: absolute;
+      top: 38px;
+      left: 0;
+      width: 100%;
+      background-color: white;
+      color: black;
+      border-radius: 6px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+      z-index: 999;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .suggestion-item {
+      padding: 8px 10px;
+      cursor: pointer;
+    }
+
+    .suggestion-item:hover {
+      background-color: #eee;
+    }
+
+    .header-actions button {
+      background-color: #00E5E6;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 8px 12px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background-color 0.3s ease;
+    }
+
+    .header-actions button:hover {
+      background-color: #00c5c6;
+    }
+
+    .menu-btn {
+      background-color: transparent;
+      border: 2px solid #00E5E6;
+      color: white;
+    }
+
+    #loading {
+      text-align: center;
+      margin: 20px;
+      font-size: 1.2em;
+      color: #00E5E6;
+    }
+
+    .anime-card {
+      background-color: #1a1a1a;
+      border-left: 6px solid #F47521;
+      display: flex;
+      gap: 20px;
+      border-radius: 6px;
+      box-shadow: 0 2px 8px rgba(255,255,255,0.05);
+      flex-wrap: wrap;
+      color: #f0f0f0;
+      padding: 20px;
+      margin: 20px auto;
+      max-width: 800px;
+    }
+
+    .anime-card img {
+      width: 150px;
+      border-radius: 6px;
+    }
+
+    .anime-card h2 {
+      margin: 0;
+      color: #F47521;
+    }
+
+    .anime-card p {
+      margin: 6px 0;
+      color: #ccc;
+    }
+
+    .anime-card button, .anime-card select, .anime-card textarea {
+      margin-top: 5px;
+    }
+
+    section.intro {
+      max-width: 800px;
+      margin: 40px auto 20px;
+      padding: 20px;
+      background-color: #fff3e6;
+      border-left: 6px solid #00E5E6;
+      border-radius: 6px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      color: #333;
+    }
+
+    section.intro h2 {
+      margin-top: 0;
+      color: #F47521;
+    }
+
+    section.intro p:last-child {
+      font-style: italic;
+      color: #00E5E6;
+    }
+
+    h3.section-title {
+      text-align: center;
+      color: #00E5E6;
+      margin-top: 40px;
+      font-size: 1.5em;
+    }
+
+    footer {
+      background-color: #F47521;
+      color: white;
+      text-align: center;
+      padding: 20px;
+      margin-top: 40px;
+    }
+
+    footer a {
+      color: white;
+      text-decoration: underline;
+      margin: 0 10px;
+    }
+
+    #searchResultsTitle {
+      text-align: center;
+      font-size: 1.4em;
+      color: #00E5E6;
+      margin-top: 40px;
+    }
+
+    .pagination {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px; /
+      margin: 20px 0 60px;
+    }
+
+    .pagination button {
+      padding: 8px 12px;
+      background-color: #00E5E6;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      text-align: center;
+    }
+
+    .pagination button:disabled {
+      background-color: #444;
+      cursor: not-allowed;
+    }
+
+     #pageNumber {
+       color: white;
+       font-weight: bold;
+       text-align: center;
+       min-width: 120px; /* Ensures consistent spacing */
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <a href="#" class="logo-link" onclick="goHome()">
+    <img src="https://raw.githubusercontent.com/IT-Yeti8/Andos_Reviews/main/Static%20Website%20Logo.png" alt="Andos Logo" style="height: 120px;">
+  </a>
+  <div class="header-actions">
+    <div style="position: relative;">
+      <input type="text" id="animeInput" placeholder="Search anime..." autocomplete="off" />
+      <div id="suggestions" class="suggestions"></div>
+    </div>
+    <button>Login</button>
+    <button class="menu-btn">☰ Menu</button>
+  </div>
+</header>
+
+<div id="loading" style="display: none;">Searching...</div>
+
+<section class="intro" id="introSection">
+  <h2>Welcome to Andos</h2>
+  <p>Ando is your go-to hub for anime reviews curated by fans, for fans. Discover top-rated shows, read short takes, and soon — share your own thoughts too! This site showcases our Top 10 picks and is just the beginning.</p>
+  <p>Stay tuned — more community features coming soon!</p>
+</section>
+
+<h3 class="section-title" id="sectionTitle">Not my top 10 but some of my favorites</h3>
+
+<div id="animeCards"></div>
+
+<h3 id="searchResultsTitle" style="display:none;">Search Results</h3>
+<div id="resultsContainer"></div>
+<div class="pagination" id="paginationControls" style="display:none;">
+  <button id="prevPage">Previous</button>
+  <span id="pageNumber" style="margin: 0 10px; color: white;"></span>
+  <button id="nextPage">Next</button>
+</div>
+
+<footer>
+  <p>© 2025 Andos. Built for fans.</p>
+  <p>
+    <a href="#">About</a> |
+    <a href="#">Contact</a> |
+    <a href="#">GitHub</a>
+  </p>
+</footer>
+
+<script>
+  const animeList = [
+    {
+      title: "Dragon Ball Z",
+      genre: "Action, Adventure",
+      studio: "Toei Animation",
+      release: "1989",
+      rating: "★★★★★ 9.6",
+      description: "Iconic action-packed anime with legendary characters.",
+      image: "https://cdn.myanimelist.net/images/anime/1277/142022.jpg"
+    },
+    {
+      title: "Yu Yu Hakusho",
+      genre: "Supernatural, Action",
+      studio: "Pierrot",
+      release: "1992",
+      rating: "★★★★☆ 9.2",
+      description: "Classic story of a teenage spirit detective.",
+      image: "https://upload.wikimedia.org/wikipedia/en/b/b7/YuYu_Hakusho_1.png"
+    },
+    {
+      title: "Haikyuu!!",
+      genre: "Sports, Drama",
+      studio: "Production I.G",
+      release: "2014",
+      rating: "★★★★☆ 9.3",
+      description: "Heart-pounding volleyball battles and personal growth.",
+      image: "https://upload.wikimedia.org/wikipedia/en/6/6b/Haiky%C5%AB_Volume_1.jpg"
+    },
+    {
+      title: "Attack on Titan",
+      genre: "Action, Drama",
+      studio: "MAPPA/Wit Studio",
+      release: "2013",
+      rating: "★★★★★ 9.8",
+      description: "Humanity fights for survival against towering titans.",
+      image: "https://upload.wikimedia.org/wikipedia/en/d/d6/Shingeki_no_Kyojin_manga_volume_1.jpg"
+    },
+    {
+      title: "Hunter x Hunter",
+      genre: "Adventure, Fantasy",
+      studio: "Madhouse",
+      release: "2011",
+      rating: "★★★★★ 9.7",
+      description: "A boy seeks his father and becomes a hunter.",
+      image: "https://upload.wikimedia.org/wikipedia/en/8/82/Hunter_%C3%97_Hunter_%282011%29.png"
+    },
+    {
+      title: "Your Lie in April",
+      genre: "Drama, Romance",
+      studio: "A-1 Pictures",
+      release: "2014",
+      rating: "★★★★☆ 9.0",
+      description: "A moving story of music, love, and loss.",
+      image: "https://cdn.myanimelist.net/images/anime/3/67177.jpg"
+    },
+    {
+      title: "One Piece",
+      genre: "Adventure, Fantasy",
+      studio: "Toei Animation",
+      release: "1999",
+      rating: "★★★★★ 9.7",
+      description: "A pirate's journey to become the King of the Pirates.",
+      image: "https://cdn.myanimelist.net/images/anime/6/73245.jpg"
+    },
+    {
+      title: "Demon Slayer",
+      genre: "Action, Supernatural",
+      studio: "Ufotable",
+      release: "2019",
+      rating: "★★★★★ 9.5",
+      description: "A boy fights demons to save his sister.",
+      image: "https://upload.wikimedia.org/wikipedia/en/0/09/Demon_Slayer_-_Kimetsu_no_Yaiba%2C_volume_1.jpg"
+    },
+    {
+      title: "Naruto",
+      genre: "Ninja, Action",
+      studio: "Studio Pierrot",
+      release: "2002",
+      rating: "★★★★☆ 9.1",
+      description: "A ninja dreams of becoming Hokage.",
+      image: "https://upload.wikimedia.org/wikipedia/en/9/94/NarutoCoverTankobon1.jpg"
+    },
+    {
+      title: "Jujutsu Kaisen",
+      genre: "Action, Dark Fantasy",
+      studio: "MAPPA",
+      release: "2020",
+      rating: "★★★★★ 9.4",
+      description: "A student battles curses to save others.",
+      image: "https://upload.wikimedia.org/wikipedia/en/4/46/Jujutsu_kaisen.jpg"
+    }
+  ];
+
+  const input = document.getElementById('animeInput');
+  const suggestionsDiv = document.getElementById('suggestions');
+  const resultsTitle = document.getElementById('searchResultsTitle');
+  const resultsContainer = document.getElementById('resultsContainer');
+  const paginationControls = document.getElementById('paginationControls');
+  const loading = document.getElementById('loading');
+  const animeCards = document.getElementById('animeCards');
+  const introSection = document.getElementById('introSection');
+  const sectionTitle = document.getElementById('sectionTitle');
+  const prevBtn = document.getElementById('prevPage');
+  const nextBtn = document.getElementById('nextPage');
+  const pageNumber = document.getElementById('pageNumber');
+
+  let debounceTimeout;
+  let currentQuery = '';
+  let currentPage = 1;
+  let lastPage = 1;
+
+  function loadAnimeCards() {
+    animeList.forEach(a => {
+      const div = document.createElement("div");
+      div.className = "anime-card";
+      div.innerHTML = `
+        <img src="${a.image}" alt="${a.title}" />
+        <div>
+          <h2>${a.title}</h2>
+          <p><strong>Genre:</strong> ${a.genre}</p>
+          <p><strong>Studio:</strong> ${a.studio}</p>
+          <p><strong>Release:</strong> ${a.release}</p>
+          <p><strong>Rating:</strong> ${a.rating}</p>
+          <p>${a.description}</p>
+          <button onclick="alert('Added to Watchlist')">➕ Add to Watchlist</button><br><br>
+          <label>⭐ Rate this Anime:
+            <select onchange="alert('You rated it ' + this.value)">
+              <option value="">Select</option>
+              <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
+            </select>
+          </label><br><br>
+          <label>📝 Leave a Review:<br>
+            <textarea rows="3" cols="40" placeholder="Type your thoughts..."></textarea><br>
+            <button onclick="alert('Review submitted!')">Submit Review</button>
+          </label><br><br>
+          <button onclick="navigator.clipboard.writeText(window.location.href); alert('Link copied!')">🔗 Share</button>
+        </div>
+      `;
+      animeCards.appendChild(div);
+    });
+  }
+
+  input.addEventListener('input', function () {
+    const query = input.value.trim();
+    clearTimeout(debounceTimeout);
+    if (!query) {
+      suggestionsDiv.innerHTML = '';
+      return;
+    }
+
+    debounceTimeout = setTimeout(() => {
+      fetch(`https://api.jikan.moe/v4/anime?q=${encodeURIComponent(query)}&limit=5`)
+        .then(res => res.json())
+        .then(data => {
+          suggestionsDiv.innerHTML = '';
+          data.data.forEach(anime => {
+            const item = document.createElement('div');
+            item.className = 'suggestion-item';
+            item.textContent = anime.title;
+            item.onclick = () => {
+              input.value = anime.title;
+              suggestionsDiv.innerHTML = '';
+              currentQuery = anime.title;
+              currentPage = 1;
+              performSearch();
+            };
+            suggestionsDiv.appendChild(item);
+          });
+        });
+    }, 300);
+  });
+
+  input.addEventListener('keypress', function (e) {
+    if (e.key === 'Enter') {
+      const query = input.value.trim();
+      if (query) {
+        suggestionsDiv.innerHTML = '';
+        currentQuery = query;
+        currentPage = 1;
+        performSearch();
+      }
+    }
+  });
+
+  prevBtn.onclick = () => { if (currentPage > 1) { currentPage--; performSearch(); } };
+  nextBtn.onclick = () => { if (currentPage < lastPage) { currentPage++; performSearch(); } };
+
+  function performSearch() {
+    animeCards.style.display = 'none';
+    introSection.style.display = 'none';
+    sectionTitle.style.display = 'none';
+    resultsTitle.style.display = 'block';
+    loading.style.display = 'block';
+    resultsContainer.innerHTML = '';
+    paginationControls.style.display = 'none';
+
+    fetch(`https://api.jikan.moe/v4/anime?q=${encodeURIComponent(currentQuery)}&limit=10&page=${currentPage}`)
+      .then(res => res.json())
+      .then(data => {
+        loading.style.display = 'none';
+        if (!data.data.length) {
+          resultsContainer.innerHTML = "<p style='text-align:center;'>No results found.</p>";
+          return;
+        }
+
+        data.data.forEach(anime => {
+          const card = document.createElement('div');
+          card.className = 'anime-card';
+          card.innerHTML = `
+            <img src="${anime.images.jpg.image_url}" alt="${anime.title}" />
+            <div>
+              <h2>${anime.title}</h2>
+              <p><strong>Score:</strong> ${anime.score ?? 'N/A'}</p>
+              <p><strong>Episodes:</strong> ${anime.episodes ?? '??'}</p>
+              <p><strong>Status:</strong> ${anime.status}</p>
+              <p>${anime.synopsis?.slice(0, 250) || 'No synopsis available.'}...</p>
+            </div>
+          `;
+          resultsContainer.appendChild(card);
+        });
+
+        lastPage = data.pagination.last_visible_page;
+        pageNumber.textContent = `Page ${currentPage} of ${lastPage}`;
+        paginationControls.style.display = 'flex';
+        prevBtn.disabled = currentPage === 1;
+        nextBtn.disabled = currentPage === lastPage;
+      })
+      .catch(err => {
+        loading.textContent = "Failed to load results.";
+        console.error(err);
+      });
+  }
+
+  function goHome() {
+    input.value = '';
+    currentQuery = '';
+    currentPage = 1;
+    resultsContainer.innerHTML = '';
+    resultsTitle.style.display = 'none';
+    loading.style.display = 'none';
+    introSection.style.display = 'block';
+    animeCards.style.display = 'block';
+    sectionTitle.style.display = 'block';
+    paginationControls.style.display = 'none';
+    suggestionsDiv.innerHTML = '';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // Load anime cards on page load
+  window.onload = loadAnimeCards;
+</script>
+
+</body>
+</html>
