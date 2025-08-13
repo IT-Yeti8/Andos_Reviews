@@ -10,20 +10,23 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Disable symlinks (prevents "file name too long" errors)
-      - name: Disable symlinks
-        run: git config --global core.symlinks false
-
-      # Step 2: Checkout only the files we need
-      - name: Checkout only needed files
+      # Step 1: Checkout repo without checking out files
+      - name: Checkout minimal
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
-          sparse-checkout: |
-            static-website/index.html
-            static-website/login.html
-            static-website/Static Website Logo update.png
-          sparse-checkout-cone-mode: true
+          # Do NOT checkout files that may contain symlinks
+          path: temp-repo
+          # Prevent symlinks from being checked out
+          # (we’ll manually copy the files we want)
+          
+      # Step 2: Copy only the files you need into a clean folder
+      - name: Copy selected files
+        run: |
+          mkdir selected-files
+          cp temp-repo/static-website/index.html selected-files/
+          cp temp-repo/static-website/login.html selected-files/
+          cp temp-repo/static-website/Static\ Website\ Logo\ update.png selected-files/
 
       # Step 3: Install AWS CLI
       - name: Set up AWS CLI
@@ -42,8 +45,4 @@ jobs:
       # Step 5: Sync selected files to S3
       - name: Sync selected files to S3
         run: |
-          aws s3 sync ./static-website s3://andos-reviews-site --delete \
-            --exclude "*" \
-            --include "index.html" \
-            --include "login.html" \
-            --include "Static Website Logo update.png"
+          aws s3 sync ./selected-files s3://andos-reviews-site --delete
