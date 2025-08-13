@@ -3,18 +3,23 @@ name: Deploy Selected Files to S3
 on:
   push:
     branches:
-      - main  # Trigger workflow on pushes to main
+      - main
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout the full repo
-      - name: Checkout repository
+      # Step 1: Checkout only the files we need
+      - name: Checkout only needed files
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Full history, safer for file copying
+          fetch-depth: 1
+          sparse-checkout: |
+            static-website/index.html
+            static-website/login.html
+            static-website/Static Website Logo update.png
+          # Remove sparse-checkout-cone completely to avoid the warning
 
       # Step 2: Install AWS CLI
       - name: Set up AWS CLI
@@ -22,7 +27,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y awscli
 
-      # Step 3: Configure AWS credentials from GitHub Secrets
+      # Step 3: Configure AWS credentials
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -30,15 +35,11 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
-      # Step 4: Copy only the files we want into a deploy folder
-      - name: Prepare deploy folder
+      # Step 4: Upload the selected files to S3
+      - name: Sync selected files to S3
         run: |
-          mkdir deploy
-          cp static-website/index.html deploy/
-          cp static-website/login.html deploy/
-          cp static-website/Static\ Website\ Logo\ update.png deploy/
-
-      # Step 5: Sync deploy folder to S3
-      - name: Sync files to S3
-        run: |
-          aws s3 sync ./deploy s3://andos-reviews-site --delete
+          aws s3 sync ./static-website s3://andos-reviews-site --delete \
+            --exclude "*" \
+            --include "index.html" \
+            --include "login.html" \
+            --include "Static Website Logo update.png"
