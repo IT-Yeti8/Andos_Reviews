@@ -10,7 +10,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout only the files we need
+      # Step 1: Disable symlinks (prevents "file name too long" errors)
+      - name: Disable symlinks
+        run: git config --global core.symlinks false
+
+      # Step 2: Checkout only the files we need
       - name: Checkout only needed files
         uses: actions/checkout@v4
         with:
@@ -21,13 +25,13 @@ jobs:
             static-website/Static Website Logo update.png
           sparse-checkout-cone-mode: true
 
-      # Step 2: Install AWS CLI
+      # Step 3: Install AWS CLI
       - name: Set up AWS CLI
         run: |
           sudo apt-get update
           sudo apt-get install -y awscli
 
-      # Step 3: Configure AWS credentials
+      # Step 4: Configure AWS credentials
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -35,7 +39,7 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
-      # Step 4: Upload the selected files to S3
+      # Step 5: Sync selected files to S3
       - name: Sync selected files to S3
         run: |
           aws s3 sync ./static-website s3://andos-reviews-site --delete \
