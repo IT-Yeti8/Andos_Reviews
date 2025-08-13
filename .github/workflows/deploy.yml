@@ -10,29 +10,20 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout repo without checking out files
-      - name: Checkout minimal
+      # Step 1: Checkout only the files we need
+      - name: Checkout only needed files
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
-          # Do NOT checkout files that may contain symlinks
-          path: temp-repo
-          # Prevent symlinks from being checked out
-          # (we’ll manually copy the files we want)
-          
-      # Step 2: Copy only the files you need into a clean folder
-      - name: Copy selected files
-        run: |
-          mkdir selected-files
-          cp temp-repo/static-website/index.html selected-files/
-          cp temp-repo/static-website/login.html selected-files/
-          cp temp-repo/static-website/Static\ Website\ Logo\ update.png selected-files/
+          # Path can be default, sparse checkout not needed since Jikan is deleted
 
-      # Step 3: Install AWS CLI
-      - name: Set up AWS CLI
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y awscli
+      # Step 2: Ensure pip is available (optional but safe)
+      - name: Ensure pip is installed
+        run: sudo apt-get update && sudo apt-get install -y python3-pip
+
+      # Step 3: Install AWS CLI via pip
+      - name: Install AWS CLI
+        run: pip install --upgrade awscli
 
       # Step 4: Configure AWS credentials
       - name: Configure AWS credentials
@@ -42,7 +33,11 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
-      # Step 5: Sync selected files to S3
+      # Step 5: Upload only selected files to S3
       - name: Sync selected files to S3
         run: |
-          aws s3 sync ./selected-files s3://andos-reviews-site --delete
+          aws s3 sync ./static-website s3://andos-reviews-site --delete \
+            --exclude "*" \
+            --include "index.html" \
+            --include "login.html" \
+            --include "Static Website Logo update.png"
