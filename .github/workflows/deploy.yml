@@ -1,34 +1,46 @@
 name: Deploy Selected Files to S3
 
+# Trigger workflow on push to main branch
 on:
   push:
     branches:
-      - main  # Trigger on push to main branch
+      - main
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest  # Use Ubuntu runner
+    runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2  # Get repo code
+      # Step 1: Checkout only the files we need (avoids symlink issues)
+      - name: Checkout only needed files
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          sparse-checkout: |
+            static-website/index.html
+            static-website/login.html
+            static-website/Static Website Logo update.png
+          sparse-checkout-cone: false
 
-    - name: Set up AWS CLI
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y awscli  # Install AWS CLI
+      # Step 2: Install AWS CLI
+      - name: Set up AWS CLI
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y awscli
 
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v1  # Set AWS credentials securely
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}  
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: us-east-1  # Change if needed
+      # Step 3: Configure AWS credentials from GitHub Secrets
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
 
-    - name: Sync only specific files to S3
-      run: |
-        aws s3 sync ./static-website s3://andos-reviews-site --delete \
-          --exclude "*" \
-          --include "index.html" \
-          --include "Static Website Logo update.png" \
-          --include "login.html"
+      # Step 4: Upload the selected files to the S3 bucket
+      - name: Sync selected files to S3
+        run: |
+          aws s3 sync ./static-website s3://andos-reviews-site --delete \
+            --exclude "*" \
+            --include "index.html" \
+            --include "login.html" \
+            --include "Static Website Logo update.png"
