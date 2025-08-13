@@ -12,13 +12,15 @@ jobs:
     steps:
       # Step 1: Checkout only the files we need
       - name: Checkout only needed files
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
-          sparse-checkout: |
-            static-website/index.html
-            static-website/login.html
-            static-website/Static Website Logo update.png
+  uses: actions/checkout@v4
+  with:
+    fetch-depth: 1
+    sparse-checkout: |
+      static-website/index.html
+      static-website/login.html
+      static-website/Static Website Logo update.png
+    sparse-checkout-cone-mode: true
+
           # Remove sparse-checkout-cone completely to avoid the warning
 
       # Step 2: Install AWS CLI
