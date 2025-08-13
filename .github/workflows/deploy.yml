@@ -1,26 +1,20 @@
 name: Deploy Selected Files to S3
 
-# Trigger workflow on push to main branch
 on:
   push:
     branches:
-      - main
+      - main  # Trigger workflow on pushes to main
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout only the files we need (avoids symlink issues)
-      - name: Checkout only needed files
+      # Step 1: Checkout the full repo
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 1
-          sparse-checkout: |
-            static-website/index.html
-            static-website/login.html
-            static-website/Static Website Logo update.png
-          sparse-checkout-cone: false
+          fetch-depth: 0  # Full history, safer for file copying
 
       # Step 2: Install AWS CLI
       - name: Set up AWS CLI
@@ -36,11 +30,15 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
-      # Step 4: Upload the selected files to the S3 bucket
-      - name: Sync selected files to S3
+      # Step 4: Copy only the files we want into a deploy folder
+      - name: Prepare deploy folder
         run: |
-          aws s3 sync ./static-website s3://andos-reviews-site --delete \
-            --exclude "*" \
-            --include "index.html" \
-            --include "login.html" \
-            --include "Static Website Logo update.png"
+          mkdir deploy
+          cp static-website/index.html deploy/
+          cp static-website/login.html deploy/
+          cp static-website/Static\ Website\ Logo\ update.png deploy/
+
+      # Step 5: Sync deploy folder to S3
+      - name: Sync files to S3
+        run: |
+          aws s3 sync ./deploy s3://andos-reviews-site --delete
