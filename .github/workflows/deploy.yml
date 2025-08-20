@@ -21,12 +21,12 @@ jobs:
           aws-region: us-east-1
 
       # Step 1: Still sync files into the bucket
-      - name: Sync selected files to S3
+      - name: Sync selected files to S3 (Staging)
         run: |
-          aws s3 sync ./static-website s3://andos-reviews-site --delete \
+          aws s3 sync ./static-website s3://andos-reviews-site/Staging/ --delete \
             --exclude "*" \
             --include "index.html" \
-            --include "login.html" \
+            --include "login2.html" \
             --include "Static Website Logo update.png"
 
       # Step 2: Tell EC2 to pull those via SSM
@@ -35,6 +35,6 @@ jobs:
           aws ssm send-command \
             --document-name DeployStaging \
             --instance-ids "${{ secrets.STAGING_INSTANCE_ID }}" \
-            --parameters S3URI="s3://andos-reviews-site/" \
+            --parameters S3URI="s3://andos-reviews-site/Staging/" \
             --comment "Deploy staging from GitHub" \
             --query "Command.CommandId" --output text
