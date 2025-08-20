@@ -1,22 +1,18 @@
-name: Deploy Staging to EC2 via SSM
-
-on:
-  push:
-    branches:
-      - main
-
 jobs:
-  deploy-staging:
+  deploy:
     runs-on: ubuntu-latest
-
     steps:
-      # 1) Checkout repo
-      - name: Checkout
+      - name: Checkout only needed files
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
 
-      # 2) Configure AWS credentials (use your existing secrets)
+      - name: Ensure pip is installed
+        run: sudo apt-get update && sudo apt-get install -y python3-pip
+
+      - name: Install AWS CLI
+        run: pip install --upgrade awscli
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -24,21 +20,21 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
-      # 3) Upload only selected files to a staging prefix in S3 (artifact store for EC2)
-      - name: Upload selected files to S3 (staging-build)
+      # Step 1: Still sync files into the bucket
+      - name: Sync selected files to S3
         run: |
-          aws s3 sync ./static-website s3://andos-reviews-site/staging-build/ --delete \
+          aws s3 sync ./static-website s3://andos-reviews-site --delete \
             --exclude "*" \
             --include "index.html" \
             --include "login.html" \
             --include "Static Website Logo update.png"
 
-      # 4) Trigger the SSM Document on the EC2 instance to pull from that prefix and reload Nginx
+      # Step 2: Tell EC2 to pull those via SSM
       - name: Trigger SSM DeployStaging on EC2
         run: |
           aws ssm send-command \
             --document-name DeployStaging \
-            --targets "Key=instanceids,Values=${{ secrets.STAGING_INSTANCE_ID }}" \
-            --parameters S3URI="s3://andos-reviews-site/staging-build/" \
+            --instance-ids "${{ secrets.STAGING_INSTANCE_ID }}" \
+            --parameters S3URI="s3://andos-reviews-site/" \
             --comment "Deploy staging from GitHub" \
             --query "Command.CommandId" --output text
