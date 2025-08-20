@@ -1,0 +1,44 @@
+name: Deploy Staging to EC2 via SSM
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy-staging:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1) Checkout repo
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      # 2) Configure AWS credentials (use your existing secrets)
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      # 3) Upload only selected files to a staging prefix in S3 (artifact store for EC2)
+      - name: Upload selected files to S3 (staging-build)
+        run: |
+          aws s3 sync ./static-website s3://andos-reviews-site/staging-build/ --delete \
+            --exclude "*" \
+            --include "index.html" \
+            --include "login.html" \
+            --include "Static Website Logo update.png"
+
+      # 4) Trigger the SSM Document on the EC2 instance to pull from that prefix and reload Nginx
+      - name: Trigger SSM DeployStaging on EC2
+        run: |
+          aws ssm send-command \
+            --document-name DeployStaging \
+            --targets "Key=instanceids,Values=${{ secrets.STAGING_INSTANCE_ID }}" \
+            --parameters S3URI="s3://andos-reviews-site/staging-build/" \
+            --comment "Deploy staging from GitHub" \
+            --query "Command.CommandId" --output text
