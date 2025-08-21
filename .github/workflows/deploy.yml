@@ -30,40 +30,25 @@ jobs:
         env:
           EC2_HOST: ${{ secrets.EC2_HOST }}
 
-      # (Optional) one-time bootstrap to ensure a web root exists + nginx installed
-      - name: Ensure nginx and web root exist
+      - name: Ensure web root exists
         run: |
           ssh -o StrictHostKeyChecking=yes "${EC2_USER}@${EC2_HOST}" '
-            set -e
-            if ! command -v nginx >/dev/null 2>&1; then
-              if command -v apt >/dev/null 2>&1; then
-                sudo apt-get update -y && sudo apt-get install -y nginx
-              elif command -v yum >/dev/null 2>&1; then
-                sudo yum install -y nginx
-                sudo systemctl enable nginx
-              fi
-            fi
-            sudo mkdir -p /var/www/html
+            sudo mkdir -p /var/www/staging
           '
         env:
           EC2_USER: ${{ secrets.EC2_USER }}
           EC2_HOST: ${{ secrets.EC2_HOST }}
 
-      - name: Copy index.html to EC2
+      - name: Copy index.html to EC2 and reload nginx
         run: |
           scp -o StrictHostKeyChecking=yes \
               static-website/index.html \
               "${EC2_USER}@${EC2_HOST}:/tmp/index.html"
 
-      - name: Move file into web root and reload nginx
-        run: |
           ssh -o StrictHostKeyChecking=yes "${EC2_USER}@${EC2_HOST}" '
-            sudo mv /tmp/index.html /var/www/html/index.html
-            sudo chmod 644 /var/www/html/index.html
-            if command -v systemctl >/dev/null 2>&1; then
-              sudo systemctl restart nginx 2>/dev/null || true
-              sudo systemctl restart httpd 2>/dev/null || true
-            fi
+            sudo mv /tmp/index.html /var/www/staging/index.html
+            sudo chmod 644 /var/www/staging/index.html
+            sudo nginx -t && sudo systemctl reload nginx
           '
         env:
           EC2_USER: ${{ secrets.EC2_USER }}
