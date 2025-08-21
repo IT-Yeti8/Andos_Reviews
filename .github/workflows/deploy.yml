@@ -1,4 +1,4 @@
-name: Deploy static site to EC2
+name: Deploy static site to EC2 (EIC)
 
 on:
   push:
@@ -14,42 +14,56 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout repo
         uses: actions/checkout@v4
 
-      # Use your EC2 key pair stored in a GitHub secret
-      - name: Start SSH agent
-        uses: webfactory/ssh-agent@v0.9.0
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Trust EC2 host key
+      - name: Generate ephemeral SSH keypair
         run: |
           mkdir -p ~/.ssh
-          ssh-keyscan -H "$EC2_HOST" >> ~/.ssh/known_hosts
-        env:
-          EC2_HOST: ${{ secrets.EC2_HOST }}
+          ssh-keygen -t rsa -b 4096 -N "" -f ~/.ssh/ephemeral_key
+          echo "PUBKEY=$(cat ~/.ssh/ephemeral_key.pub)" >> $GITHUB_ENV
 
-      - name: Ensure web root exists
+      - name: Discover instance AZ (needed for EIC)
+        id: az
         run: |
-          ssh -o StrictHostKeyChecking=yes "${EC2_USER}@${EC2_HOST}" '
-            sudo mkdir -p /var/www/staging
-          '
-        env:
-          EC2_USER: ${{ secrets.EC2_USER }}
-          EC2_HOST: ${{ secrets.EC2_HOST }}
+          AZ=$(aws ec2 describe-instances --instance-ids "${{ secrets.EC2_INSTANCE_ID }}" \
+               --query "Reservations[0].Instances[0].Placement.AvailabilityZone" --output text)
+          echo "AZ=$AZ" >> $GITHUB_OUTPUT
 
-      - name: Copy index.html to EC2 and reload nginx
+      - name: Push ephemeral public key via EC2 Instance Connect
         run: |
-          scp -o StrictHostKeyChecking=yes \
+          aws ec2-instance-connect send-ssh-public-key \
+            --instance-id "${{ secrets.EC2_INSTANCE_ID }}" \
+            --availability-zone "${{ steps.az.outputs.AZ }}" \
+            --instance-os-user "${{ secrets.EC2_USER }}" \
+            --ssh-public-key "$PUBKEY"
+        env:
+          PUBKEY: ${{ env.PUBKEY }}
+
+      - name: Copy index.html and reload nginx
+        run: |
+          HOST=$(aws ec2 describe-instances --instance-ids "${{ secrets.EC2_INSTANCE_ID }}" \
+                 --query "Reservations[0].Instances[0].PublicIpAddress" --output text)
+
+          ssh-keyscan -H "$HOST" >> ~/.ssh/known_hosts
+
+          # Copy file
+          scp -i ~/.ssh/ephemeral_key -o StrictHostKeyChecking=yes \
               static-website/index.html \
-              "${EC2_USER}@${EC2_HOST}:/tmp/index.html"
+              "${{ secrets.EC2_USER }}@${HOST}:/tmp/index.html"
 
-          ssh -o StrictHostKeyChecking=yes "${EC2_USER}@${EC2_HOST}" '
+          # Move into place & reload nginx
+          ssh -i ~/.ssh/ephemeral_key -o StrictHostKeyChecking=yes \
+              "${{ secrets.EC2_USER }}@${HOST}" '
+            sudo mkdir -p /var/www/staging
             sudo mv /tmp/index.html /var/www/staging/index.html
             sudo chmod 644 /var/www/staging/index.html
             sudo nginx -t && sudo systemctl reload nginx
           '
-        env:
-          EC2_USER: ${{ secrets.EC2_USER }}
-          EC2_HOST: ${{ secrets.EC2_HOST }}
