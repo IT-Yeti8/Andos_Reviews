@@ -1,46 +1,70 @@
-name: Deploy Selected Files to S3
+name: Deploy static site to EC2
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
+    paths:
+      - "static-website/**"
+
+permissions:
+  contents: read
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout only needed files
+      - name: Checkout
         uses: actions/checkout@v4
+
+      # Use your EC2 key pair stored in a GitHub secret
+      - name: Start SSH agent
+        uses: webfactory/ssh-agent@v0.9.0
         with:
-          fetch-depth: 1
+          ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
 
-      - name: Ensure pip is installed
-        run: sudo apt-get update && sudo apt-get install -y python3-pip
-
-      - name: Install AWS CLI
-        run: pip install --upgrade awscli
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
-
-      # Step 1: Still sync files into the bucket
-      - name: Sync selected files to S3 (Staging)
+      - name: Trust EC2 host key
         run: |
-          aws s3 sync ./static-website s3://andos-reviews-site/Staging/ --delete \
-            --exclude "*" \
-            --include "index.html" \
-            --include "login2.html" \
-            --include "Static Website Logo update.png"
+          mkdir -p ~/.ssh
+          ssh-keyscan -H "$EC2_HOST" >> ~/.ssh/known_hosts
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
 
-      # Step 2: Tell EC2 to pull those via SSM
-      - name: Trigger SSM DeployStaging on EC2
+      # (Optional) one-time bootstrap to ensure a web root exists + nginx installed
+      - name: Ensure nginx and web root exist
         run: |
-          aws ssm send-command \
-            --document-name DeployStaging \
-            --instance-ids "${{ secrets.STAGING_INSTANCE_ID }}" \
-            --parameters S3URI="s3://andos-reviews-site/Staging/" \
-            --comment "Deploy staging from GitHub" \
-            --query "Command.CommandId" --output text
+          ssh -o StrictHostKeyChecking=yes "${EC2_USER}@${EC2_HOST}" '
+            set -e
+            if ! command -v nginx >/dev/null 2>&1; then
+              if command -v apt >/dev/null 2>&1; then
+                sudo apt-get update -y && sudo apt-get install -y nginx
+              elif command -v yum >/dev/null 2>&1; then
+                sudo yum install -y nginx
+                sudo systemctl enable nginx
+              fi
+            fi
+            sudo mkdir -p /var/www/html
+          '
+        env:
+          EC2_USER: ${{ secrets.EC2_USER }}
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+
+      - name: Copy index.html to EC2
+        run: |
+          scp -o StrictHostKeyChecking=yes \
+              static-website/index.html \
+              "${EC2_USER}@${EC2_HOST}:/tmp/index.html"
+
+      - name: Move file into web root and reload nginx
+        run: |
+          ssh -o StrictHostKeyChecking=yes "${EC2_USER}@${EC2_HOST}" '
+            sudo mv /tmp/index.html /var/www/html/index.html
+            sudo chmod 644 /var/www/html/index.html
+            if command -v systemctl >/dev/null 2>&1; then
+              sudo systemctl restart nginx 2>/dev/null || true
+              sudo systemctl restart httpd 2>/dev/null || true
+            fi
+          '
+        env:
+          EC2_USER: ${{ secrets.EC2_USER }}
+          EC2_HOST: ${{ secrets.EC2_HOST }}
