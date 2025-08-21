@@ -1,18 +1,16 @@
-name: Deploy static site to EC2 (EIC)
+name: Stage to EC2 (EIC)
 
 on:
   push:
     branches: [ main ]
-    paths:
-      - "static-website/**"
+    paths: [ "static-website/**" ]
 
 permissions:
   contents: read
 
 jobs:
-  deploy:
+  stage_to_ec2:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -30,14 +28,14 @@ jobs:
           ssh-keygen -t rsa -b 4096 -N "" -f ~/.ssh/ephemeral_key
           echo "PUBKEY=$(cat ~/.ssh/ephemeral_key.pub)" >> $GITHUB_ENV
 
-      - name: Discover instance AZ (needed for EIC)
+      - name: Discover instance AZ
         id: az
         run: |
           AZ=$(aws ec2 describe-instances --instance-ids "${{ secrets.EC2_INSTANCE_ID }}" \
                --query "Reservations[0].Instances[0].Placement.AvailabilityZone" --output text)
           echo "AZ=$AZ" >> $GITHUB_OUTPUT
 
-      - name: Push ephemeral public key via EC2 Instance Connect
+      - name: Authorize key via EC2 Instance Connect
         run: |
           aws ec2-instance-connect send-ssh-public-key \
             --instance-id "${{ secrets.EC2_INSTANCE_ID }}" \
@@ -47,19 +45,17 @@ jobs:
         env:
           PUBKEY: ${{ env.PUBKEY }}
 
-      - name: Copy index.html and reload nginx
+      - name: Copy index.html to /var/www/staging and reload nginx
         run: |
           HOST=$(aws ec2 describe-instances --instance-ids "${{ secrets.EC2_INSTANCE_ID }}" \
                  --query "Reservations[0].Instances[0].PublicIpAddress" --output text)
 
           ssh-keyscan -H "$HOST" >> ~/.ssh/known_hosts
 
-          # Copy file
           scp -i ~/.ssh/ephemeral_key -o StrictHostKeyChecking=yes \
               static-website/index.html \
               "${{ secrets.EC2_USER }}@${HOST}:/tmp/index.html"
 
-          # Move into place & reload nginx
           ssh -i ~/.ssh/ephemeral_key -o StrictHostKeyChecking=yes \
               "${{ secrets.EC2_USER }}@${HOST}" '
             sudo mkdir -p /var/www/staging
