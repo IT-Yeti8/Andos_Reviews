@@ -1,5 +1,10 @@
 # Andos Reviews – Cloud Engineering Project
 
+👤 **Reginald Anderson**  
+📧 rtanderson8@gmail.com  
+🔗 [LinkedIn](https://www.linkedin.com/in/reginald-anderson/) 
+
+
 A full-stack hybrid cloud project that hosts a static anime review website on **Amazon S3** and combines both **serverless services** (API Gateway, Lambda, DynamoDB) and **traditional servers** (EC2 with Rocky Linux, Nginx, Apache).  
 
 This project demonstrates **networking, security, serverless APIs, event-driven design, monitoring, CI/CD automation (Terraform + GitHub Actions + CodePipeline), and containerization with Docker**, using AWS services and open-source tools.
