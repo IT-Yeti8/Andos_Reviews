@@ -58,7 +58,7 @@ It’s not just an app — it’s a **portfolio piece** to showcase readiness fo
 ## 🚀 Next Steps
 Planned improvements to continue evolving this project:
 
-- **Kubernetes Practice**: Extend containerization work by deploying the backend with Docker Compose locally, then move to Amazon EKS or Minikube for hands-on orchestration and scaling.  
-- **Advanced Certification Goal**: Pursue the AWS Certified Solutions Architect – Associate to strengthen cloud design knowledge and complement existing AWS/Linux certifications.  
-- **Disaster Recovery & High Availability**: Explore multi-AZ database setups (e.g., RDS or DynamoDB Global Tables) and implement backup/restore strategies to practice business continuity planning.  
+- **Kubernetes**: Extend containerization work by deploying the backend with Docker Compose locally, then move to Amazon EKS or Minikube for hands-on orchestration and scaling.  
+- **Advanced Certification**: Pursue the AWS Certified Solutions Architect – Associate to strengthen cloud design knowledge and complement existing AWS/Linux certifications.  
+- **Disaster Recovery**: Explore multi-AZ database setups and implement backup/restore strategies to practice business continuity planning.  
 
