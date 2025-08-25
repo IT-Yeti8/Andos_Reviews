@@ -4,14 +4,15 @@ A full-stack hybrid cloud project that hosts a static anime review website on **
 
 This project demonstrates **networking, security, serverless APIs, event-driven design, monitoring, CI/CD automation (Terraform + GitHub Actions + CodePipeline), and containerization with Docker**, using AWS services and open-source tools.
 
-🔗 **Live Site:** [https://www.andosreviews.com](https://www.andosreviews.com)
+🔗 **Live Site:** (https://www.andosreviews.com)
 
 ---
 
 ## 🌐 Architecture
-![Andos Architecture](docs/andos_week7_architecture_v8.png)
+![Architecture Diagram](Cloud%20Enginer%20Project%20Diagram.png)
 
-👉 See the detailed **Cloud Engineering Map** (PDF): [docs/andos_reviews_cloud_engineering_map_v9.pdf](docs/andos_reviews_cloud_engineering_map_v9.pdf)
+👉 See the detailed [Cloud Engineering Map (PDF)](Cloud%20Enginer%20Project%20Diagram.pdf)  
+👉 Or [download directly](https://github.com/IT-Yeti8/Andos_Reviews/raw/main/Cloud%20Enginer%20Project%20Diagram.pdf)
 
 ---
 
@@ -46,4 +47,4 @@ This project demonstrates the skills expected of a modern **Cloud Engineer / Dev
 - Automating deployments and infrastructure with CI/CD + IaC  
 - Managing networking, security, observability, and scalability end-to-end  
 
-It’s not just an app — it’s a **portfolio piece** to showcase readiness for cloud engineering roles.  
+It’s not just an app — it’s a **portfolio piece** to showcase readiness for cloud engineering roles.
