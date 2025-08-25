@@ -14,7 +14,6 @@ This project demonstrates **networking, security, serverless APIs, event-driven 
 ---
 
 ## 🌐 Architecture
-![Architecture Diagram](Cloud%20Enginer%20Project%20Diagram.png)
 
 👉 See the detailed [Cloud Engineering Map (PDF)](Cloud%20Enginer%20Project%20Diagram.pdf)  
 👉 Or [download directly](https://github.com/IT-Yeti8/Andos_Reviews/raw/main/Cloud%20Enginer%20Project%20Diagram.pdf)
