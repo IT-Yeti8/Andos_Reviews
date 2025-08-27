@@ -29,7 +29,7 @@ This project demonstrates **networking, security, serverless APIs, event-driven 
 - **Monitoring & Logging**: CloudWatch metrics/logs, EventBridge events, CloudTrail auditing  
 - **Infrastructure as Code**: Terraform modules for VPC, Lambda, API Gateway, and networking  
 - **Containers & VMs**: Dockerized experiments (Flask, Nginx), Rocky Linux & Ubuntu VMs for practice  
-- **Web Servers**: Nginx & Apache configuration on EC2/VMs  
+- **Web Servers**: Nginx configuration on EC2/VMs  
 
 ---
 
