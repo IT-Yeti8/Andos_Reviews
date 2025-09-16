@@ -1,0 +1,1419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Andos • Anime Discovery</title>
+
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+<!-- Preload the logo so it paints immediately -->
+<link rel="preload" as="image" href="Static%20Website%20Logo%20v3.png" />
+
+<!-- SEO -->
+<meta name="description" id="metaDesc" content="Andos — anime reviews by fans, for fans. Discover top picks, read community opinions, and share your own.">
+
+<style>
+  :root{
+    --bg:#0c0d10; --text:#eef3f7; --muted:#a8b2bf; --panel:#111318;
+    --glass:rgba(255,255,255,.06); --glass-stroke:rgba(255,255,255,.14);
+    --brand:#F47521; /* orange */
+    --accent:#00E5E6; /* teal */
+    --shadow:0 10px 30px rgba(0,0,0,.35);
+    /* Z stack */
+    --z-overlay:900;
+    --z-anime:910;
+    --z-review:920;
+    --z-login:930;
+    --z-toasts:999;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;color:var(--text);
+    font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+    background:
+      radial-gradient(900px 600px at 10% -10%, rgba(0,229,230,.08), transparent 60%),
+      radial-gradient(900px 600px at 110% 10%, rgba(244,117,33,.07), transparent 60%),
+      var(--bg);
+    display:flex;flex-direction:column;min-height:100vh;
+  }
+
+  a{color:inherit}
+
+  /* Header */
+  .site-header{
+    position:sticky;top:0;z-index:60;
+    background:linear-gradient(180deg,var(--bg),rgba(12,13,16,.82));
+    border-bottom:2px solid var(--accent);
+    backdrop-filter:blur(6px)
+  }
+  .head{
+    max-width:1240px;margin:auto;padding:12px 16px;
+    display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap
+  }
+  .logo-btn{background:transparent;border:0;padding:0;cursor:pointer}
+  /* Logo (brighter) */
+  .logo{height:60px;width:auto;display:block;filter:brightness(1.15) contrast(1.05) drop-shadow(0 4px 14px rgba(0,229,230,.45));}
+  @media (min-width:900px){ .logo{ height:64px } }
+  .logo-btn:active .logo{ transform:translateY(1px) }
+
+  .search{display:flex;align-items:center;gap:10px;flex:1;max-width:620px;margin:0 16px;position:relative}
+  .search input{flex:1;padding:10px 12px;background:var(--panel);border:1px solid var(--glass-stroke);border-radius:12px;color:var(--text)}
+  .btn{padding:8px 12px;border:1px solid var(--glass-stroke);background:var(--panel);border-radius:10px;cursor:pointer;color:var(--text)}
+  .btn.primary{background:linear-gradient(90deg,var(--brand),var(--accent));color:#0d0e12;border:none;font-weight:800}
+  .btn.ghost{background:var(--glass); border:1px solid var(--glass-stroke)}
+
+  /* Dropdown */
+  .dropdown{position:relative}
+  .dropdown-toggle{display:flex;align-items:center;gap:6px}
+  .dropdown-menu{
+    position:absolute;top:calc(100% + 6px);right:0;min-width:180px;
+    background:var(--panel);border:1px solid var(--glass-stroke);border-radius:12px;
+    box-shadow:var(--shadow);display:none;z-index:80;overflow:hidden;
+  }
+  .dropdown.open .dropdown-menu{display:block}
+  .dropdown-item{display:block;padding:12px 14px;text-decoration:none;color:var(--text);white-space:nowrap}
+  .dropdown-item:hover{background:var(--glass)}
+
+  /* User badge ("Login as X") */
+  .user-badge{
+    display:inline-flex; align-items:center; gap:6px;
+    padding:6px 10px; border-radius:10px;
+    background: var(--glass); border:1px solid var(--glass-stroke);
+    color: var(--text); font-size:.9rem;
+  }
+  .user-badge .dot{
+    width:8px; height:8px; border-radius:50%;
+    background:#16a34a; box-shadow:0 0 0 2px rgba(22,163,74,.25);
+  }
+
+  /* Main */
+  main{max-width:1240px; width:100%; margin:16px auto; padding:0 16px; flex:1}
+  .hidden{display:none!important}
+
+  /* Intro section */
+  .intro-section{
+    background:linear-gradient(180deg, var(--glass), rgba(255,255,255,.03));
+    border-left:6px solid var(--accent); border-radius:12px; padding:20px; box-shadow:var(--shadow);
+    margin:14px 0 24px;
+  }
+  .intro-section h2{margin:0 0 10px;color:var(--brand)}
+  .section-title{ color: var(--accent); text-align:center; margin: 6px 0 12px 0; font-weight:800; }
+
+  /* Featured carousel */
+  .featured{
+    background:var(--panel); border:1px solid var(--glass-stroke);border-left:6px solid var(--accent); border-radius:18px;
+    box-shadow:var(--shadow); padding:18px; margin:24px 0
+  }
+  .featured h2{display:flex;align-items:center;gap:8px;margin:0 0 12px}
+  .carousel{position:relative;display:flex;align-items:center;gap:10px}
+  .viewport{overflow:hidden;flex:1}
+  .track{
+    display:flex; gap:14px; padding:6px; transition:transform .45s ease;
+    position:relative; z-index:1;
+  }
+  .track > .poster-tile{ flex:0 0 auto }
+
+  /* Poster tile — base card */
+  .poster-tile{
+    position:relative; aspect-ratio:2/3;
+    width:clamp(160px, 13vw, 195px);
+    border-radius:16px; overflow:hidden;
+    border:1px solid rgba(255,255,255,.12);
+    background:#0d0f13;
+    box-shadow: 0 10px 24px rgba(0,0,0,.28);
+    cursor:pointer;
+    transition: transform .18s ease, box-shadow .18s ease;
+  }
+  .poster-tile:hover{ transform: translateY(-4px); box-shadow: 0 18px 36px rgba(0,0,0,.38); }
+  .poster-tile .img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:center; z-index:1; }
+  .poster-tile .footer{ z-index:3; }
+
+  /* Orange left stripe above the image */
+  .poster-tile::before{
+    content:"";
+    position:absolute;
+    left:0; top:0; bottom:0; width:6px;
+    background:var(--brand);
+    z-index:2; pointer-events:none;
+  }
+
+  /* Featured posters scale rules */
+  .featured .poster-tile{ width:206px }
+  @media (max-width:1200px){ .featured .poster-tile{ width:248px } }
+  @media (max-width:950px){  .featured .poster-tile{ width:320px } }
+  @media (max-width:700px){  .featured .poster-tile{ width:44vw } }
+  @media (max-width:480px){  .featured .poster-tile{ width:86vw } }
+
+  .poster-tile .footer{
+    position:absolute; left:0; right:0; bottom:0; padding:10px 12px;
+    background:linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(8,10,13,.58) 38%, rgba(8,10,13,.96) 100%);
+    display:flex; align-items:flex-end; justify-content:space-between; gap:10px; pointer-events:none;
+  }
+  .poster-tile .t-title{
+    margin:0; font-size:.98rem; font-weight:800; letter-spacing:.05px;
+    line-height:1.18; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden;
+    max-width:74%;
+  }
+  .poster-tile .t-meta{font-size:.95rem; display:flex; flex-direction:column; align-items:flex-end; gap:4px}
+  .pill{
+    padding:2px 8px; border-radius:999px; background:rgba(255,255,255,.12);
+    border:1px solid rgba(255,255,255,.16); font-size:.78rem; color:#d7dde6;
+  }
+  .score{color:var(--accent); font-weight:800}
+
+  /* Tile badges */
+  .tile-badges{position:absolute; inset:8px 8px auto auto; display:flex; gap:6px; z-index:4; opacity:0; transition:opacity .18s ease;}
+  .poster-tile:hover .tile-badges{opacity:1}
+  .badge{
+    display:inline-flex; align-items:center; gap:6px;
+    height:26px; padding:0 8px; border-radius:999px;
+    background:rgba(17,19,24,.75); backdrop-filter: blur(6px);
+    border:1px solid rgba(255,255,255,.18);
+    box-shadow: var(--shadow); font-size:.85rem;
+  }
+
+  /* Orange arrows */
+  .nav{
+    position:absolute;top:50%;transform:translateY(-50%);
+    width:44px;height:44px;border-radius:50%;display:grid;place-items:center;border:none;cursor:pointer;
+    background:var(--brand); color:#0d0e12; font-weight:900;
+    box-shadow:0 10px 24px rgba(0,0,0,.35);
+    z-index:50; /* sit above poster tiles */
+  }
+  .nav.left{left:-12px} .nav.right{right:-12px}
+  .nav:hover{filter:brightness(1.00)}
+
+  /* Results grid */
+  .results-wrap{max-width:1100px;margin:22px auto 0}
+  #resultsGrid{list-style:none; padding:0; margin:0}
+  .grid-5x5{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:18px}
+  @media (max-width:1200px){.grid-5x5{grid-template-columns:repeat(4,1fr)}}
+  @media (max-width:950px){.grid-5x5{grid-template-columns:repeat(3,1fr)}}
+  @media (max-width:700px){.grid-5x5{grid-template-columns:repeat(2,1fr)}}
+  @media (max-width:480px){.grid-5x5{grid-template-columns:1fr}}
+  .grid-5x5 .poster-tile{width:auto}
+  .loading{padding:24px;text-align:center;color:var(--accent)}
+  #loadMoreBtn{display:none;margin:18px auto 0;padding:12px 18px;border-radius:12px;border:none;background:linear-gradient(90deg,var(--brand),var(--accent));color:#0d0e12;font-weight:800}
+
+  /* Anime Modals */
+  .anime-modal{display:none;position:fixed;inset:0;align-items:center;justify-content:center;background:rgba(0,0,0,.85);padding:16px}
+  .anime-modal.show{display:flex}
+  .modal--anime{z-index:var(--z-anime)}
+  .modal--review{z-index:var(--z-review)}
+  .modal--login{z-index:var(--z-login)}
+  .anime-modal-content{background:var(--panel);color:var(--text);border:1px solid var(--glass-stroke);border-radius:16px;box-shadow:var(--shadow);max-width:900px;width:100%;padding:16px;position:relative}
+  .anime-modal-close{position:absolute;top:10px;right:14px;border:none;background:transparent;color:var(--text);font-size:20px;cursor:pointer}
+  .anime-modal-body{display:grid;grid-template-columns:minmax(220px, clamp(260px,28vw,340px)) 1fr;gap:16px;align-items:stretch}
+  @media (max-width:780px){.anime-modal-body{grid-template-columns:1fr}}
+  .modal-poster{width:100%;height:100%;object-fit:contain;object-position:center;background:#0f1117;border-radius:12px;box-shadow:0 10px 24px rgba(0,0,0,.28), inset 0 0 0 1px var(--glass-stroke)}
+  @media (max-width:780px){.modal-poster{height:auto;aspect-ratio:2/3}}
+  .modal-title{margin:0 0 8px;color:var(--accent)}
+  .modal-meta-row{margin-bottom:12px;display:flex;gap:16px;flex-wrap:wrap;font-size:14px;color:var(--muted)}
+  .modal-synopsis{margin:8px 0 12px}
+  .genre-tag{padding:4px 8px;background:var(--glass);border:1px solid var(--glass-stroke);border-radius:6px;font-size:.75rem;margin:0 6px 6px 0;display:inline-block}
+
+  /* Suggestions + login inputs */
+  .search-suggestions{position:absolute;top:calc(100% + 4px);left:0;right:46px;background:var(--panel);border:1px solid var(--glass-stroke);border-radius:12px;box-shadow:var(--shadow);max-height:300px;overflow:auto;display:none;z-index:60}
+  .suggestion-item{padding:10px 12px;cursor:pointer}
+  .suggestion-item:hover{background:var(--glass)}
+  .modal-form input, .modal-form textarea{width:100%;padding:10px;border-radius:8px;border:1px solid var(--glass-stroke);background:var(--bg);color:var(--text);margin-top:6px}
+
+  /* Footer */
+  footer{margin-top:40px;background:var(--brand);border-top:3px solid var(--accent);color:#fff}
+  .foot-inner{max-width:1240px;margin:0 auto;padding:18px 16px;text-align:center}
+  .foot-inner a{color:#fff;text-decoration:none;margin:0 10px}
+  .foot-inner a:hover{text-decoration:underline}
+
+  /* Reviews UI (cards & grid) */
+  .reviews-list{display:grid;gap:10px}
+  .review-card{
+    background:var(--panel); border:1px solid var(--glass-stroke); border-radius:10px;
+    padding:10px; box-shadow:var(--shadow);
+  }
+  .review-card .meta{font-size:.85rem;color:var(--muted);margin-bottom:6px;display:flex;gap:8px;flex-wrap:wrap}
+  .review-card .title{font-weight:700;margin:0 0 4px}
+  .review-card .body{margin:0}
+  .spoiler{filter:blur(4px);}
+  .spoiler-toggle{font-size:.8rem;color:var(--accent);cursor:pointer;margin-top:6px;display:inline-block}
+
+  /* Toasts */
+  #toastHost{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:var(--z-toasts);display:grid;gap:10px;pointer-events:none}
+  .toast{
+    pointer-events:auto;
+    background:rgba(17,19,24,.92);color:#fff;border:1px solid rgba(255,255,255,.16);
+    padding:10px 12px;border-radius:10px;box-shadow:var(--shadow);display:flex;align-items:center;gap:10px;min-width:220px;
+    animation:toastIn .16s ease;
+  }
+  .toast .action{margin-left:auto}
+  .toast .action .btn{padding:6px 10px}
+  @keyframes toastIn{from{opacity:0;transform:translate(-50%,10px)}to{opacity:1;transform:translate(-50%,0)}}
+
+  /* Mobile comfort */
+  @media (max-width: 560px){
+    .dropdown-menu { min-width: 220px; }
+    .dropdown-item { padding: 16px 18px; font-size: 1rem; }
+
+    .anime-modal-content { padding: 18px; }
+    .anime-modal-close{
+      top: max(10px, env(safe-area-inset-top));
+      right: max(14px, env(safe-area-inset-right));
+      width:44px;height:44px; border-radius:999px;
+      background: rgba(17,19,24,.6);
+      display:grid; place-items:center; font-size:22px;
+    }
+  }
+</style>
+</head>
+<body>
+<script>
+  document.body.dataset.theme = localStorage.getItem('theme') || 'dark';
+</script>
+
+<header class="site-header">
+  <div class="head">
+    <button class="logo-btn" onclick="goHome()" aria-label="Go home">
+      <img class="logo" alt="Andos Logo" src="Static Website Logo v3.png"/>
+    </button>
+
+    <div class="search">
+      <input id="searchInput" type="search" placeholder="Search anime..." autocomplete="off" aria-label="Search anime"/>
+      <div id="searchSuggestions" class="search-suggestions" role="listbox" aria-label="Search suggestions"></div>
+      <button class="btn" id="searchBtn" aria-label="Search">🔍</button>
+    </div>
+
+    <div style="display:flex;gap:10px;align-items:center">
+      <button class="btn" onclick="goHome()">Home</button>
+
+      <div class="dropdown" id="mainDropdown">
+        <button class="btn dropdown-toggle" id="menuBtn" aria-haspopup="true" aria-expanded="false">☰ Menu</button>
+        <div class="dropdown-menu" id="menuDrop" role="menu">
+          <a href="#" class="dropdown-item" role="menuitem" onclick="closeMenu(); openFavorites()">Favorites</a>
+	  <a href="#" class="dropdown-item" role="menuitem" onclick="closeMenu(); openWatchlist()">WatchList</a>
+          <a href="Recommendations(v1).html" class="dropdown-item" role="menuitem" onclick="closeMenu()">Recommendations</a>
+          <a href="#" class="dropdown-item" role="menuitem" onclick="closeMenu(); openRecentReviews()">Community Reviews</a>
+          <a href="#" class="dropdown-item" role="menuitem" onclick="closeMenu(); openMyReviews()">My Reviews</a>
+        </div>
+      </div>
+
+      <span id="userBadge" class="user-badge" style="display:none" aria-live="polite">
+        <span class="dot" aria-hidden="true"></span>
+        <span id="userNameLabel"></span>
+      </span>
+
+      <button id="loginBtn" class="btn primary" onclick="openLoginModal()">Login</button>
+      <button id="logoutBtn" class="btn" style="display:none" onclick="logout()">Logout</button>
+    </div>
+  </div>
+
+</header>
+
+<main>
+  <!-- HOME CONTENT -->
+  <div id="homeContent">
+    <section class="intro-section">
+      <h2>Welcome to Andos</h2>
+      <p>Ando is your go-to hub for anime reviews curated by fans, for fans. Discover top-rated shows, read short takes, and soon — share your own thoughts too! This site showcases our Top 10 picks and is just the beginning.</p>
+      <p>Stay tuned — more community features coming soon!</p>
+    </section>
+
+    <h3 class="section-title">Not my top 10 but some of my favorites</h3>
+
+    <section class="featured">
+      <h2>🔥 Featured Anime</h2>
+      <div class="carousel">
+        <button class="nav left" id="carLeft" aria-label="Previous">‹</button>
+        <div class="viewport"><div id="carouselTrack" class="track"><div class="loading">Loading…</div></div></div>
+        <button class="nav right" id="carRight" aria-label="Next">›</button>
+      </div>
+    </section>
+  </div>
+
+  <!-- SEARCH RESULTS -->
+  <div id="searchSection" class="hidden">
+    <div class="results-wrap">
+      <ul id="resultsGrid" class="grid-5x5" aria-live="polite"></ul>
+      <button id="loadMoreBtn">Load More (10)</button>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="foot-inner">
+    © <span id="year"></span> Andos. Built for fans. ·
+    <a href="#">About</a> · <a href="#">Contact</a> · <a href="#">GitHub</a>
+  </div>
+</footer>
+
+<!-- Login -->
+<div id="loginModal" class="anime-modal modal--login" aria-hidden="true" role="dialog" aria-modal="true" aria-label="Login modal">
+  <div class="anime-modal-content" style="max-width:420px">
+    <button class="anime-modal-close" onclick="closeLoginModal()">✕</button>
+    <h3 class="modal-title">Login</h3>
+    <div class="modal-form">
+      <label>Username</label><input id="loginUser"/>
+      <label style="margin-top:10px">Password</label><input id="loginPass" type="password"/>
+      <div style="display:flex;gap:10px;margin-top:14px">
+        <button class="btn primary" onclick="doLogin()">Login</button>
+        <button class="btn" onclick="closeLoginModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Review modal -->
+<div id="reviewModal" class="anime-modal modal--review" aria-hidden="true" style="display:none" role="dialog" aria-modal="true" aria-label="Add review modal">
+  <div class="anime-modal-content">
+    <button class="anime-modal-close" onclick="closeReviewModal()">✕</button>
+    <div class="anime-modal-body" style="display:block">
+      <h3 id="reviewModalTitle" style="margin-top:0">Add Review for <span id="reviewAnimeTitle"></span></h3>
+      <div class="modal-form">
+        <label>Rating (1–10)</label>
+        <input id="reviewRating" type="number" min="1" max="10"/>
+
+        <label style="margin-top:10px">Title (optional)</label>
+        <input id="reviewTitle" type="text"/>
+
+        <label style="margin-top:10px">Your Review</label>
+        <textarea id="reviewBody" rows="5"></textarea>
+
+        <div style="display:flex;gap:10px;margin-top:14px">
+          <button class="btn primary" onclick="submitReview()">Save Review</button>
+          <button class="btn" onclick="closeReviewModal()">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Community Reviews (Recent) -->
+<div id="recentReviewsModal" class="anime-modal modal--anime" aria-hidden="true"
+     role="dialog" aria-modal="true" aria-label="Recent community reviews">
+  <div class="anime-modal-content" style="max-width:760px">
+    <button class="anime-modal-close" onclick="closeRecentReviews()">✕</button>
+    <div class="anime-modal-body" style="display:block">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+        <h3 style="margin:0">Community Reviews</h3>
+        <div id="rrCount" style="color:var(--muted);font-size:.9rem"></div>
+        <div style="margin-left:auto;display:flex;gap:8px">
+          <select id="rrSort" class="btn" onchange="populateRecentReviews()" aria-label="Sort reviews">
+            <option value="newest">Newest</option>
+            <option value="rating">Highest Rated</option>
+            <option value="byAnime">By Anime</option>
+          </select>
+        </div>
+      </div>
+      <div id="recentReviewsList" class="reviews-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- My Reviews -->
+<div id="myReviewsModal" class="anime-modal modal--anime" aria-hidden="true" role="dialog" aria-modal="true" aria-label="My reviews">
+  <div class="anime-modal-content" style="max-width:760px">
+    <button class="anime-modal-close" onclick="document.getElementById('myReviewsModal').classList.remove('show')">✕</button>
+    <div class="anime-modal-body" style="display:block">
+      <h3 style="margin:0 0 10px">My Reviews</h3>
+      <div id="myReviewsList" class="reviews-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Anime detail modal -->
+<div id="animeModal" class="anime-modal modal--anime" aria-hidden="true" role="dialog" aria-modal="true" aria-label="Anime detail modal">
+  <div class="anime-modal-content">
+    <button class="anime-modal-close" onclick="closeAnimeModal()">✕</button>
+    <div class="anime-modal-body">
+      <img id="modalPoster" class="modal-poster" src="" alt="Poster" loading="lazy">
+      <div style="min-width:260px">
+        <h3 id="modalTitle" class="modal-title"></h3>
+        <div id="modalMeta" class="modal-meta-row"></div>
+        <div id="modalGenres" style="margin-bottom:6px"></div>
+        <p id="modalSynopsis" class="modal-synopsis"></p>
+
+        <div id="whereToWatchSection" style="display:none;margin-top:8px">
+          <h4 style="margin:10px 0">Where to watch</h4>
+          <div id="streamingButtons" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+        </div>
+
+        <!-- actions row -->
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+          <button class="btn" onclick="onFav()">💖 Favorite</button>
+          <button class="btn" onclick="onWatch()">📚 Watchlist</button>
+          <button class="btn primary" onclick="openMyAnimeList()">🔗 More Details</button>
+          <button class="btn" onclick="shareCurrent()">🔗 Share</button>
+          <button class="btn primary" onclick="openReviewModal()">+ Review</button>
+        </div>
+
+        <!-- Community Reviews for this anime -->
+        <div id="animeReviewsSection" style="margin-top:12px;display:none">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <h4 style="margin:10px 0">Community Reviews</h4>
+            <div id="animeReviewStats" style="font-size:.9rem;color:var(--muted)"></div>
+          </div>
+          <div id="animeReviewsList" class="reviews-list"></div>
+          <button id="viewAllBtn" class="btn ghost" style="margin-top:8px;display:none" onclick="expandAllReviews()">View all reviews</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Favorites -->
+<div id="favModal" class="anime-modal modal--anime" aria-hidden="true" role="dialog" aria-modal="true" aria-label="Favorites">
+  <div class="anime-modal-content" style="max-width:760px">
+    <button class="anime-modal-close" onclick="document.getElementById('favModal').classList.remove('show'); document.body.style.overflow='auto'">✕</button>
+    <div class="anime-modal-body" style="display:block">
+      <h3 style="margin:0 0 10px">Favorites</h3>
+      <div id="favList" class="reviews-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Watchlist -->
+<div id="watchModal" class="anime-modal modal--anime" aria-hidden="true" role="dialog" aria-modal="true" aria-label="Watchlist">
+  <div class="anime-modal-content" style="max-width:760px">
+    <button class="anime-modal-close" onclick="document.getElementById('watchModal').classList.remove('show'); document.body.style.overflow='auto'">✕</button>
+    <div class="anime-modal-body" style="display:block">
+      <h3 style="margin:0 0 10px">WatchList</h3>
+      <div id="watchList" class="reviews-list"></div>
+    </div>
+  </div>
+</div>
+
+
+<!-- Toast host -->
+<div id="toastHost" aria-live="polite" aria-atomic="true"></div>
+
+<script>
+/* ===== Utilities ===== */
+const API='https://api.jikan.moe/v4';
+const FIRST_PAGE_SIZE = 25;
+const LOAD_MORE_SIZE  = 10;
+
+const STREAM_COLORS = {
+  'crunchyroll':  '#f47521',
+  'netflix':      '#e50914',
+  'hulu':         '#1ce783',
+  'disney plus':  '#113ccf',
+  'funimation':   '#5b4e75',
+  'hidive':       '#00AEEF'
+};
+const STREAM_LABELS = {
+  'crunchyroll': 'Crunchyroll',
+  'netflix':     'Netflix',
+  'hulu':        'Hulu',
+  'disney plus': 'Disney Plus',
+  'funimation':  'Funimation',
+  'hidive':      'HIDIVE'
+};
+const ALLOWED_STREAMS = new Set(Object.keys(STREAM_COLORS));
+function canonProviderName(raw){
+  if(!raw) return '';
+  let n = String(raw).trim().toLowerCase();
+  n = n.replace(/\+/g, ' plus');        // Disney+ → disney plus
+  n = n.replace(/hi[\s-]?dive/i, 'hidive'); // HiDive → hidive
+  return n;
+}
+function pickTitle(a){
+  return a?.title_english
+      || (a?.titles?.find(t => t.type === 'English')?.title)
+      || a?.title
+      || 'Unknown';
+}
+function placeholder(){
+  return 'data:image/svg+xml;charset=UTF-8,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="400" height="600"><rect width="100%" height="100%" fill="#0f1117"/><text x="50%" y="50%" fill="#444" font-size="20" text-anchor="middle" dominant-baseline="middle">No image</text></svg>`);
+}
+function $(sel,root=document){ return root.querySelector(sel); }
+function $all(sel,root=document){ return Array.from(root.querySelectorAll(sel)); }
+
+/* ===== User lists (Favorites & Watchlist) ===== */
+const LISTS_KEY = 'andos_lists'; // { [username]: { fav: {id:{id,title,img}}, watch: {...} } }
+
+function getUserLists(){
+  const user = localStorage.getItem('andos_user') || '';
+  const all  = get(LISTS_KEY, {});
+  if (!user) return { user:'', lists:{ fav:{}, watch:{} } };
+  if (!all[user]) all[user] = { fav:{}, watch:{} };
+  return { user, lists: all[user], all };
+}
+function saveUserLists(all){ set(LISTS_KEY, all); }
+
+function addToList(kind, anime){
+  const { user, lists, all } = getUserLists();
+  if (!user) { return toast('Please log in to use this', { action:{ label:'Login', onClick: openLoginModal } }); }
+  if (!anime?.mal_id) return toast('Open an anime first');
+  const id  = anime.mal_id;
+  const img = anime.images?.jpg?.image_url || anime.images?.jpg?.large_image_url || placeholder();
+  lists[kind][id] = { id, title: pickTitle(anime), img };
+  all[user] = lists;
+  saveUserLists(all);
+  toast(kind==='fav' ? 'Added to Favorites' : 'Added to Watchlist');
+}
+
+function removeFromList(kind, id){
+  const { user, lists, all } = getUserLists();
+  if (!user) return;
+  delete lists[kind][id];
+  all[user] = lists;
+  saveUserLists(all);
+}
+
+function renderList(kind, hostId){
+  const box = document.getElementById(hostId);
+  const { user, lists } = getUserLists();
+  if (!user) { box.innerHTML = '<div class="review-card"><p class="body">Please log in.</p></div>'; return; }
+  const entries = Object.values(lists[kind]);
+  if (!entries.length){
+    box.innerHTML = '<div class="review-card"><p class="body">Nothing here yet.</p></div>';
+    return;
+  }
+  box.innerHTML = entries.map(it => `
+    <div class="review-card">
+      <div class="meta">
+        <strong>${escapeHtml(it.title)}</strong>
+        <span>• MAL #${it.id}</span>
+      </div>
+      <div style="display:flex; gap:10px; align-items:center; margin-top:6px">
+        <img src="${it.img}" alt="" style="width:64px; height:96px; object-fit:cover; border-radius:8px; border:1px solid var(--glass-stroke)"/>
+        <div style="display:flex; gap:8px; flex-wrap:wrap">
+          <button class="btn" onclick="closeAllModals(); openModalById(${it.id})">Open Anime</button>
+          <button class="btn ghost" onclick="removeFromList('${kind}', ${it.id}); renderList('${kind}', '${hostId}')">Remove</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function openFavorites(){
+  if(!isLoggedIn()){ return toast('Please log in to use this', { action:{ label:'Login', onClick: openLoginModal } }); }
+  closeAllModals();
+  renderList('fav', 'favList');
+  document.getElementById('favModal').classList.add('show');
+  document.body.style.overflow='hidden';
+}
+function openWatchlist(){
+  if(!isLoggedIn()){ return toast('Please log in to use this', { action:{ label:'Login', onClick: openLoginModal } }); }
+  closeAllModals();
+  renderList('watch', 'watchList');
+  document.getElementById('watchModal').classList.add('show');
+  document.body.style.overflow='hidden';
+}
+
+
+/* ===== Toasts ===== */
+function toast(message, opts={}){
+  const host = $('#toastHost');
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.innerHTML = `<span>${message}</span>`;
+  if(opts.action){
+    const btn = document.createElement('button');
+    btn.className='btn primary action';
+    btn.textContent = opts.action.label || 'OK';
+    btn.onclick = ()=>{ try{ opts.action.onClick && opts.action.onClick(); } finally { host.removeChild(el); } };
+    el.appendChild(btn);
+  }
+  host.appendChild(el);
+  const t = setTimeout(()=>{ el.style.opacity='0'; setTimeout(()=>{ host.contains(el)&&host.removeChild(el); }, 200); }, opts.duration||2500);
+  el.addEventListener('mouseenter', ()=> clearTimeout(t), { once:true });
+}
+
+/* ===== Dropdown ===== */
+const dd = document.getElementById('mainDropdown');
+document.getElementById('menuBtn').addEventListener('click', (e)=>{ e.stopPropagation(); dd.classList.toggle('open'); });
+function closeMenu(){ dd.classList.remove('open'); }
+document.addEventListener('click', (e)=>{ if(!dd.contains(e.target)) closeMenu(); });
+
+/* ===== Auth UI ===== */
+function isLoggedIn(){ return !!localStorage.getItem('andos_user'); }
+function applyAuthUI(){
+  const user = localStorage.getItem('andos_user') || '';
+  const loggedIn = !!user;
+
+  const loginBtn   = document.getElementById('loginBtn');
+  const logoutBtn  = document.getElementById('logoutBtn');
+  const badge      = document.getElementById('userBadge');
+  const nameLabel  = document.getElementById('userNameLabel');
+
+  if (loggedIn){
+    loginBtn.style.display  = 'none';
+    logoutBtn.style.display = 'inline-block';
+    nameLabel.textContent   = `Login as ${user}`;
+    badge.style.display     = 'inline-flex';
+  } else {
+    loginBtn.style.display  = 'inline-block';
+    logoutBtn.style.display = 'none';
+    badge.style.display     = 'none';
+    nameLabel.textContent   = '';
+  }
+}
+function openLoginModal(){ closeAllModals(); const m=document.getElementById('loginModal'); m.classList.add('show'); }
+function closeLoginModal(){ document.getElementById('loginModal').classList.remove('show'); }
+function doLogin(){
+  const u=document.getElementById('loginUser').value.trim();
+  const p=document.getElementById('loginPass').value.trim();
+  if(!u || !p){ toast('Enter username and password'); return; }
+  localStorage.setItem('andos_user', u);
+  closeLoginModal(); applyAuthUI(); toast('Welcome, '+u+'!');
+}
+function logout(){
+  localStorage.removeItem('andos_user');
+  applyAuthUI();
+  toast('Logged out');
+}
+
+/* ===== ReviewsProvider (localStorage) with edit/delete ===== */
+const REV_KEY='andos_reviews';
+const META_KEY='andos_reviews_meta'; // {animeId:{count,avg}}
+
+const ReviewsProvider = {
+  list(animeId){ const map = get(REV_KEY, {}); return (map[animeId]||[]).slice(); },
+  create(animeId, review){
+    const map = get(REV_KEY, {});
+    map[animeId] = map[animeId] || [];
+    review.id = review.id || (crypto.randomUUID?.() || (Date.now()+"_"+Math.random().toString(36).slice(2)));
+    map[animeId].push(review);
+    set(REV_KEY, map);
+    this.recomputeMeta(animeId, map[animeId]);
+    return get(META_KEY,{})[animeId];
+  },
+  update(animeId, reviewId, updater){
+    const map = get(REV_KEY, {}); const arr = map[animeId]||[];
+    const i = arr.findIndex(r=>r.id===reviewId); if(i<0) return null;
+    arr[i] = {...arr[i], ...updater, editedAt: new Date().toISOString()};
+    set(REV_KEY, map);
+    this.recomputeMeta(animeId, arr);
+    return arr[i];
+  },
+  remove(animeId, reviewId){
+    const map = get(REV_KEY, {}); const arr = map[animeId]||[];
+    const i = arr.findIndex(r=>r.id===reviewId); if(i<0) return;
+    arr.splice(i,1);
+    set(REV_KEY, map);
+    this.recomputeMeta(animeId, arr);
+  },
+  summary(animeId){
+    const meta = get(META_KEY, {});
+    if(meta[animeId]) return meta[animeId];
+    const list = this.list(animeId);
+    if(!list.length) return {count:0, avg:0};
+    const count = list.length;
+    const avg = +(list.reduce((s,r)=>s+(+r.rating||0),0)/count).toFixed(1);
+    meta[animeId] = {count, avg}; set(META_KEY, meta);
+    return meta[animeId];
+  },
+  recomputeMeta(animeId, arr){
+    const meta = get(META_KEY, {});
+    const count = arr.length;
+    const avg = count? +(arr.reduce((s,r)=>s+(+r.rating||0),0)/count).toFixed(1) : 0;
+    meta[animeId] = {count, avg};
+    set(META_KEY, meta);
+  }
+};
+function get(k, def){ try{ return JSON.parse(localStorage.getItem(k)||'') ?? def; }catch{ return def; } }
+function set(k, v){ localStorage.setItem(k, JSON.stringify(v)); }
+
+/* ===== Featured carousel ===== */
+let featured = [],
+    carIndex = 0,
+    N_VISIBLE = 6,
+    tileStep = 0;
+
+// Featured Anime (MAL IDs)
+const featuredAnimeIds = [
+  813,     // Dragon Ball Z
+  392,     // Yu Yu Hakusho
+  20583,   // Haikyuu!!
+  16498,   // Attack on Titan
+  11061,   // Hunter x Hunter (2011)
+  23273,   // Your Lie in April
+  21,      // One Piece
+  20,      // Naruto
+  38000,   // Demon Slayer: Kimetsu no Yaiba
+  40748    // Jujutsu Kaisen
+];
+
+async function loadFeatured() {
+  try {
+    const results = await Promise.all(
+      featuredAnimeIds.map(id =>
+        jikan(`/anime/${id}`).catch(err => {
+          console.error("Error fetching ID", id, err);
+          return null;
+        })
+      )
+    );
+
+    // Extract the .data field from each API response
+    featured = results.map(r => r?.data).filter(Boolean);
+
+    if (!featured.length) {
+      console.warn("No featured anime loaded");
+    } else {
+      console.log("Fetched featured anime:", featured);
+    }
+
+    buildCarousel();
+  } catch (e) {
+    console.error("Failed to load featured anime:", e);
+    featured = [];
+    buildCarousel();
+  }
+}
+
+
+function tileHTML(a){
+  const title = pickTitle(a);
+  const img   = a.images?.jpg?.large_image_url || a.images?.jpg?.image_url || placeholder();
+  const year  = a.year || a.aired?.prop?.from?.year || '';
+  const score = a.score ?? '—';
+  const meta  = ReviewsProvider.summary(a.mal_id);
+
+  return `
+  <div class="poster-tile" data-id="${a.mal_id}" title="${title}"
+       aria-label="${title}. ${meta.count} review${meta.count!==1?'s':''}">
+    <img class="img" loading="lazy" src="${img}" alt="Poster of ${title}" onerror="this.src='${placeholder()}'">
+    <div class="tile-badges" aria-hidden="true">
+      <span class="badge">🗣️ ${meta.count}</span>
+    </div>
+    <div class="footer">
+      <h4 class="t-title">${title}</h4>
+      <div class="t-meta"><span class="pill">${year}</span><span class="score">★ ${score}</span></div>
+    </div>
+  </div>`;
+}
+
+function buildCarousel(){
+  const track = document.getElementById('carouselTrack');
+  if(!featured.length){ track.innerHTML='<div class="loading">No data</div>'; return; }
+  const head = featured.slice(-N_VISIBLE);
+  const tail = featured.slice(0, N_VISIBLE);
+  const extended = [...head, ...featured, ...tail];
+
+  track.innerHTML = extended.map(tileHTML).join('');
+
+  track.querySelectorAll('.poster-tile').forEach(el=>{
+    el.addEventListener('click', ()=> openModalById(+el.getAttribute('data-id')) );
+  });
+
+  const firstTile = track.querySelector('.poster-tile');
+  const gap = parseInt(getComputedStyle(track).gap || '14', 10);
+  tileStep = (firstTile?.offsetWidth || 195) + gap;
+
+  carIndex = N_VISIBLE;
+  setTranslateX(track, -carIndex * tileStep, false);
+
+  document.getElementById('carLeft').onclick  = ()=> shiftCarousel(-1);
+  document.getElementById('carRight').onclick = ()=> shiftCarousel(1);
+
+  track.addEventListener('transitionend', ()=>{
+    const total = featured.length;
+    if(carIndex >= total + N_VISIBLE){
+      carIndex -= total;
+      setTranslateX(track, -carIndex * tileStep, false);
+    }else if(carIndex < N_VISIBLE){
+      carIndex += total;
+      setTranslateX(track, -carIndex * tileStep, false);
+    }
+  });
+}
+function setTranslateX(track, x, animate=true){
+  track.style.transition = animate ? 'transform .45s ease' : 'none';
+  track.style.transform  = `translateX(${x}px)`;
+}
+function shiftCarousel(delta){
+  const track = document.getElementById('carouselTrack');
+  carIndex += delta;
+  setTranslateX(track, -carIndex * tileStep, true);
+}
+
+/* ===== Search ===== */
+let state={q:'',page:1,items:[],hasNext:false};
+async function performSearch(){
+  const q=document.getElementById('searchInput').value.trim();
+  if(!q) return;
+  document.getElementById('homeContent').classList.add('hidden');
+  document.getElementById('searchSection').classList.remove('hidden');
+
+  state={q,page:1,items:[],hasNext:false};
+  const js=await jikan(`/anime?q=${encodeURIComponent(q)}&page=1&limit=${FIRST_PAGE_SIZE}&order_by=score&sort=desc`);
+  state.items=js?.data||[]; state.hasNext=js?.pagination?.has_next_page||false;
+  renderResults(); updateLoadMore();
+}
+function updateLoadMore(){
+  const b=document.getElementById('loadMoreBtn');
+  b.style.display=state.hasNext?'inline-block':'none';
+  b.disabled=false; b.textContent=`Load More (${LOAD_MORE_SIZE})`;
+}
+document.getElementById('loadMoreBtn').onclick=async ()=>{
+  const b=document.getElementById('loadMoreBtn'); b.disabled=true; b.textContent='Loading…';
+  const next=state.page+1;
+  const js=await jikan(`/anime?q=${encodeURIComponent(state.q)}&page=${next}&limit=${LOAD_MORE_SIZE}&order_by=score&sort=desc`);
+  state.items=[...state.items,...(js?.data||[])]; state.page=next; state.hasNext=js?.pagination?.has_next_page||false;
+  renderResults(); updateLoadMore();
+};
+document.getElementById('searchInput').addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ performSearch(); } });
+document.getElementById('searchBtn').addEventListener('click', performSearch);
+
+function renderResults(){
+  const grid=document.getElementById('resultsGrid');
+  if(!state.items.length){ grid.innerHTML='<li class="loading">No results</li>'; return; }
+  grid.innerHTML = state.items.map(a=>{
+    const title=pickTitle(a);
+    const img=a.images?.jpg?.large_image_url||a.images?.jpg?.image_url||placeholder();
+    const year=a.year||a.aired?.prop?.from?.year||'';
+    const score=a.score??'—';
+    const meta=ReviewsProvider.summary(a.mal_id);
+    return `
+  <li class="poster-tile" onclick="openModalById(${a.mal_id})" title="${title}"
+      aria-label="${title}. ${meta.count} review${meta.count!==1?'s':''}">
+    <img class="img" loading="lazy" src="${img}" alt="Poster of ${title}" onerror="this.src='${placeholder()}'">
+    <div class="tile-badges">
+      <span class="badge">🗣️ ${meta.count}</span>
+    </div>
+    <div class="footer">
+      <h4 class="t-title">${title}</h4>
+      <div class="t-meta"><span class="pill">${year}</span><span class="score">★ ${score}</span></div>
+    </div>
+  </li>`;
+  }).join('');
+}
+
+/* ===== Suggestions ===== */
+(function suggest(){
+  const input=document.getElementById('searchInput');
+  const box=document.getElementById('searchSuggestions');
+  let timer=null;
+  input.addEventListener('input',()=>{
+    const v=input.value.trim();
+    if(timer) clearTimeout(timer);
+    if(v.length<2){ box.style.display='none'; return; }
+    timer=setTimeout(async()=>{
+      try{
+        const js=await jikan(`/anime?q=${encodeURIComponent(v)}&limit=8`);
+        const items=js?.data||[];
+        if(!items.length){ box.style.display='none'; return; }
+        box.innerHTML=items.map(a=>{
+          const t=(pickTitle(a)||'').replace(/'/g,"\\'");
+          const y=a.year||a.aired?.prop?.from?.year||''; const s=a.score??'—';
+          return `<div class="suggestion-item" onclick="selectSuggestion('${t}')"><div style="font-weight:700">${t}</div><div style="font-size:.8rem;color:var(--muted)">${y} • ⭐ ${s}</div></div>`;
+        }).join('');
+        box.style.display='block';
+      }catch{ box.style.display='none'; }
+    },250);
+  });
+  document.addEventListener('click',e=>{ if(!box.closest('.search').contains(e.target)) box.style.display='none'; });
+})();
+function selectSuggestion(t){ document.getElementById('searchInput').value=t; document.getElementById('searchSuggestions').style.display='none'; performSearch(); }
+
+/* ===== API helpers ===== */
+function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
+async function jikan(path){const r=await fetch(API+path); if(!r.ok) throw new Error('Jikan '+r.status); return r.json();}
+
+/* ===== Modals & actions ===== */
+let current = null;            // current anime object
+let editingReviewId = null;    // null => creating new
+
+function closeAllModals(){
+  ['animeModal','reviewModal','loginModal','recentReviewsModal','myReviewsModal','favModal','watchModal'].forEach(id=>{
+    const m = document.getElementById(id);
+    if (m) m.classList.remove('show');
+  });
+  document.body.style.overflow = 'auto';
+}
+
+/* Close any open modal when clicking the backdrop (outside the dialog) */
+document.addEventListener('mousedown', (e) => {
+  const modal = e.target.closest('.anime-modal');
+  if (!modal) return; // click was not on a modal (ignore)
+  const clickedContent = e.target.closest('.anime-modal-content');
+  if (!clickedContent) { // backdrop click
+    modal.classList.remove('show');
+    document.body.style.overflow = 'auto';
+  }
+});
+
+async function openModalById(id){
+  try{
+    closeAllModals();
+
+    const [full, stream, external] = await Promise.all([
+      jikan(`/anime/${id}/full`),
+      jikan(`/anime/${id}/streaming`).catch(()=>null),
+      jikan(`/anime/${id}/external`).catch(()=>null)
+    ]);
+
+    const a = full?.data;
+    if (!a) return;
+
+    // Merge streaming/external providers and keep only allowed ones (deduped)
+    const fromStreaming = (stream?.data || []).map(s => ({ name: s.name || s.site || '', url: s.url || s.link || '' }));
+    const fromExternal  = (external?.data || []).map(s => ({ name: s.name || s.site || '', url: s.url || s.link || '' }));
+    const combined = [...fromStreaming, ...fromExternal];
+
+    const seen = new Set();
+    const merged = [];
+    for (const s of combined){
+      const key = canonProviderName(s.name);
+      if (!ALLOWED_STREAMS.has(key)) continue;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      merged.push({ name: STREAM_LABELS[key] || s.name, url: s.url, key });
+    }
+    a.streaming = merged;
+
+    openModal(a);
+  } catch(e){
+    toast('Failed to load anime');
+  }
+}
+
+// Used by the "Open Anime" buttons in Community/My Reviews
+function goToAnimeFromReview(id){
+  closeAllModals();
+  openModalById(id);
+}
+
+function openModal(a){
+  current = a;
+
+  const img = a.images?.jpg?.large_image_url || a.images?.jpg?.image_url || placeholder();
+  document.getElementById('modalPoster').src = img;
+  document.getElementById('modalTitle').textContent = pickTitle(a);
+  document.getElementById('modalSynopsis').textContent = a.synopsis || 'No synopsis available.';
+  document.getElementById('modalMeta').innerHTML = `
+    <span><strong>Year:</strong> ${a.year || a.aired?.prop?.from?.year || 'Unknown'}</span>
+    <span><strong>Type:</strong> ${a.type || 'Unknown'}</span>
+    <span><strong>Status:</strong> ${a.status || 'Unknown'}</span>
+    <span><strong>Episodes:</strong> ${a.episodes ?? 'Unknown'}</span>
+    <span><strong>Score:</strong> ★ ${a.score ?? 'N/A'}</span>`;
+
+  document.getElementById('modalGenres').innerHTML =
+    (a.genres || []).map(g => `<span class="genre-tag">${g.name}</span>`).join('');
+
+  // SEO: dynamic title & description
+  document.title = pickTitle(a) + ' — Andos';
+  const md = document.getElementById('metaDesc');
+  if (md){
+    const synopsis = (a.synopsis || 'Read community reviews and details on Andos.');
+    md.setAttribute('content', synopsis.length > 160 ? synopsis.slice(0,157) + '…' : synopsis);
+  }
+
+  // Streaming buttons
+  const wrap = document.getElementById('streamingButtons');
+  wrap.innerHTML = '';
+  const filtered = (a.streaming || []).map(s => {
+    const key = canonProviderName(s.name);
+    return { key, url: s.url, raw: s.name };
+  }).filter(s => ALLOWED_STREAMS.has(s.key));
+
+  if (!filtered.length){
+    document.getElementById('whereToWatchSection').style.display = 'none';
+  } else {
+    for (const s of filtered){
+      const A = document.createElement('a');
+      A.textContent = STREAM_LABELS[s.key] || s.raw || s.key;
+      A.href = s.url; A.target = '_blank'; A.rel = 'noopener noreferrer';
+      A.className = 'btn';
+      A.style = `background:${STREAM_COLORS[s.key] || '#333'};color:#fff;border:none`;
+      wrap.appendChild(A);
+    }
+    document.getElementById('whereToWatchSection').style.display = 'block';
+  }
+
+  // Show modal
+  const modal = document.getElementById('animeModal');
+  modal.classList.add('show');
+  document.body.style.overflow = 'hidden';
+
+  // Render reviews (top 3 initially)
+  showingAll = false;
+  renderReviewsForAnime(a.mal_id, { limit: 3 });
+}
+
+function closeAnimeModal(){
+  const modal = document.getElementById('animeModal');
+  modal.classList.remove('show');
+  document.body.style.overflow = 'auto';
+  // reset SEO
+  document.title = 'Andos • Anime Discovery';
+  const md = document.getElementById('metaDesc');
+  if (md) md.setAttribute('content','Andos — anime reviews by fans, for fans. Discover top picks, read community opinions, and share your own.');
+}
+
+// Close on ESC
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeAllModals(); });
+
+  
+
+function closeAnimeModal() {
+  const modal = document.getElementById('animeModal');
+  modal.classList.remove('show');
+  document.body.style.overflow = 'auto';
+
+  // Reset SEO
+  document.title = 'Andos • Anime Discovery';
+  const md = document.getElementById('metaDesc');
+  if (md) {
+    md.setAttribute('content', 'Andos — anime reviews by fans, for fans. Discover top picks, read community opinions, and share your own.');
+  }
+}
+
+// Close modals on Escape key
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeAllModals();
+});
+
+
+/* Favorites & Watchlist */
+function onFav(){
+  if(!isLoggedIn()){ return toast('Please log in to use this', { action:{ label:'Login', onClick: openLoginModal } }); }
+  if(!current){ return toast('Open an anime first'); }
+  addToList('fav', current);
+}
+
+function onWatch(){
+  if(!isLoggedIn()){ return toast('Please log in to use this', { action:{ label:'Login', onClick: openLoginModal } }); }
+  if(!current){ return toast('Open an anime first'); }
+  addToList('watch', current);
+}
+
+
+/* Share */
+function shareCurrent(){
+  if(!current) return;
+  const url = current.url || (location.origin + location.pathname + '?anime=' + current.mal_id);
+  navigator.clipboard?.writeText(url).then(
+    ()=> toast('Link copied'),
+    ()=> toast('Could not copy, please copy manually')
+  );
+}
+
+function openMyAnimeList(){
+  if(current?.url){ window.open(current.url, '_blank', 'noopener'); return; }
+  if(current?.mal_id){ window.open(`https://myanimelist.net/anime/${current.mal_id}`, '_blank', 'noopener'); return; }
+  toast('No link available');
+}
+
+/* Review modal (create/edit) */
+function openReviewModal(){
+  if(!isLoggedIn()){ return toast('Please log in to use this', { action:{ label:'Login', onClick: openLoginModal } }); }
+  if(!current?.mal_id){ return toast('Open an anime first'); }
+  closeAllModals();
+  editingReviewId = null; // creating new by default
+  document.getElementById('reviewAnimeTitle').textContent = (pickTitle(current)||'this anime');
+  document.getElementById('reviewRating').value='';
+  document.getElementById('reviewTitle').value='';
+  document.getElementById('reviewBody').value='';
+  const m=document.getElementById('reviewModal');
+  m.style.display='flex'; m.classList.add('show');
+}
+function closeReviewModal(){
+  const m=document.getElementById('reviewModal');
+  m.classList.remove('show'); m.style.display='none';
+  document.body.style.overflow='auto';
+}
+
+
+function submitReview(){
+  if(!isLoggedIn()){ return toast('Please log in to use this', { action:{ label:'Login', onClick: openLoginModal } }); }
+  const rating = parseInt(document.getElementById('reviewRating').value,10);
+  const title  = (document.getElementById('reviewTitle').value||'').trim();
+  const body   = (document.getElementById('reviewBody').value||'').trim();
+  if(!(rating>=1 && rating<=10)){ return toast('Rating must be 1–10'); }
+  if(!body){ return toast('Please write a short review'); }
+  const user = localStorage.getItem('andos_user') || 'Anonymous';
+  const id   = current?.mal_id; if(!id){ return toast('No anime selected'); }
+
+  if (editingReviewId){
+    ReviewsProvider.update(id, editingReviewId, { rating, title:escapeHtml(title), body:sanitize(body) });
+    closeReviewModal();
+    editingReviewId = null;
+    toast('Review updated');
+  } else {
+    const review = {
+      uid:user, rating, title:escapeHtml(title), body:sanitize(body),
+      when:new Date().toISOString(),
+      anime:{ id, title: pickTitle(current) }
+    };
+    const meta = ReviewsProvider.create(id, review);
+    updateTileBadges(id, meta);
+    closeReviewModal();
+    toast('Review saved!');
+  }
+
+  renderReviewsForAnime(id, {limit:3});
+  renderRecentIfOpen();
+}
+
+/* Sanitize simple text */
+function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
+function sanitize(s){
+  let t = String(s||'');
+  t = t.replace(/<[^>]*>/g,'');         // strip tags
+  t = t.replace(/\s{3,}/g,'  ');
+  return t;
+}
+
+/* Render reviews in modal */
+let showingAll=false;
+function renderReviewsForAnime(id, {limit=3}={}){
+  const box = document.getElementById('animeReviewsSection');
+  const list= document.getElementById('animeReviewsList');
+  const btn = document.getElementById('viewAllBtn');
+  const stats = document.getElementById('animeReviewStats');
+  if(!box || !list) return;
+
+  const items = ReviewsProvider.list(id);
+  const meta  = ReviewsProvider.summary(id);
+
+  if(!items.length){
+    box.style.display='none'; list.innerHTML=''; btn.style.display='none'; stats.textContent='';
+    return;
+  }
+  box.style.display='block';
+  stats.textContent = `(${meta.count} review${meta.count>1?'s':''}, avg ${meta.avg})`;
+
+  const toShow = showingAll ? items.slice().reverse() : items.slice().reverse().slice(0,limit);
+  list.innerHTML = toShow.map(r=> renderReviewCard(r)).join('');
+
+  btn.style.display = (items.length > limit && !showingAll) ? 'inline-block' : 'none';
+}
+function renderReviewCard(r){
+  const isMe = (localStorage.getItem('andos_user')||'') === r.uid;
+  const isSpoiler = /(^|\b)spoiler\s*:/i.test(r.body);
+  const body = escapeHtml(r.body);
+  const snippet = body.length>420 ? body.slice(0,420)+'…' : body;
+  const spoilerBlock = isSpoiler
+    ? `<div class="body spoiler" data-full="${body}">${snippet}</div><a class="spoiler-toggle" onclick="toggleSpoiler(this)">Show spoilers</a>`
+    : `<div class="body">${snippet}</div>`;
+
+  const ownerBtns = isMe ? `
+    <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap">
+      <button class="btn" onclick="startEditReview('${r.id}')">Edit</button>
+      <button class="btn ghost" onclick="deleteReview('${r.id}')">Delete</button>
+    </div>` : '';
+
+  return `
+    <div class="review-card">
+      <div class="meta">
+        <span>⭐ ${r.rating}/10</span>
+        <span>by ${escapeHtml(r.uid)}</span>
+        <span>${new Date(r.when).toLocaleDateString()}</span>
+        ${r.editedAt ? `<span>• edited</span>` : ``}
+      </div>
+      ${r.title ? `<p class="title">${escapeHtml(r.title)}</p>` : ''}
+      ${spoilerBlock}
+      ${ownerBtns}
+    </div>
+  `;
+}
+function toggleSpoiler(el){
+  const div = el.previousElementSibling;
+  const blurred = div.classList.toggle('spoiler');
+  el.textContent = blurred ? 'Show spoilers' : 'Hide spoilers';
+  if(!blurred){ div.innerHTML = div.getAttribute('data-full'); }
+}
+function expandAllReviews(){ showingAll=true; if(current?.mal_id) renderReviewsForAnime(current.mal_id, {limit:3}); }
+
+function startEditReview(rid){
+  if(!current?.mal_id) return;
+  const list = ReviewsProvider.list(current.mal_id);
+  const r = list.find(x=>x.id===rid); if(!r) return;
+  if((localStorage.getItem('andos_user')||'') !== r.uid){
+    return toast('You can only edit your review');
+  }
+  editingReviewId = rid;
+  document.getElementById('reviewAnimeTitle').textContent = pickTitle(current);
+  document.getElementById('reviewRating').value = r.rating;
+  document.getElementById('reviewTitle').value  = r.title || '';
+  document.getElementById('reviewBody').value   = r.body || '';
+  closeAllModals();
+  const m=document.getElementById('reviewModal');
+  m.style.display='flex'; m.classList.add('show');
+}
+
+function deleteReview(rid){
+  if(!current?.mal_id) return;
+  const list = ReviewsProvider.list(current.mal_id);
+  const r = list.find(x=>x.id===rid); if(!r) return;
+  if((localStorage.getItem('andos_user')||'') !== r.uid){
+    return toast('You can only delete your review');
+  }
+  if(!confirm('Delete this review? This cannot be undone.')) return;
+  ReviewsProvider.remove(current.mal_id, rid);
+  const meta = ReviewsProvider.summary(current.mal_id);
+  updateTileBadges(current.mal_id, meta);
+  renderReviewsForAnime(current.mal_id, {limit:3});
+  renderRecentIfOpen();
+  toast('Review deleted');
+}
+
+/* update if recent modal is open */
+function renderRecentIfOpen(){
+  const m = document.getElementById('recentReviewsModal');
+  if(m && m.classList.contains('show') && typeof populateRecentReviews==='function'){
+    populateRecentReviews();
+  }
+}
+
+/* Update badges on tiles for an anime */
+function updateTileBadges(id, meta){
+  document.querySelectorAll(`.poster-tile[data-id="${id}"]`).forEach(tile=>{
+    const countBadge = tile.querySelector('.tile-badges .badge');
+    if(countBadge){ countBadge.textContent = '🗣️ ' + meta.count; }
+  });
+}
+
+/* Community Reviews modal (Menu) */
+function openRecentReviews(){
+  closeAllModals();           // keep one-modal rule
+  const sel = document.getElementById('rrSort');
+  if (sel) sel.value = 'byAnime';   // default to grouping
+  populateRecentReviews();
+  document.getElementById('recentReviewsModal').classList.add('show');
+}
+function closeRecentReviews(){
+  document.getElementById('recentReviewsModal').classList.remove('show');
+}
+function populateRecentReviews(limit=30){
+  const box   = document.getElementById('recentReviewsList');
+  const count = document.getElementById('rrCount');
+  const sort  = (document.getElementById('rrSort')?.value) || 'newest';
+  if(!box) return;
+
+  const map  = JSON.parse(localStorage.getItem('andos_reviews') || '{}');
+  const all  = Object.values(map).flat();
+
+  if(sort === 'byAnime'){
+    // group by anime id, sort groups by latest activity
+    const byAnime = {};
+    for(const r of all){
+      const id = r?.anime?.id;
+      if(!byAnime[id]) byAnime[id] = { title: r?.anime?.title || 'Unknown', items: [] };
+      byAnime[id].items.push(r);
+    }
+    const groups = Object.entries(byAnime).sort(([,a],[,b])=>{
+      const la = a.items.reduce((m,x)=> Math.max(m, +new Date(x.when)), 0);
+      const lb = b.items.reduce((m,x)=> Math.max(m, +new Date(x.when)), 0);
+      return lb - la;
+    });
+
+    count.textContent = `(${groups.length} anime)`;
+    if(!groups.length){
+      box.innerHTML = '<div class="review-card"><p class="body">No reviews yet. Be the first!</p></div>';
+      return;
+    }
+
+    box.innerHTML = groups.map(([aid,grp])=>{
+      const latest = grp.items.slice().sort((a,b)=> new Date(b.when)-new Date(a.when))[0];
+      const preview = (latest?.body||'');
+      const short = preview.length>280 ? preview.slice(0,280)+'…' : preview;
+      const c = grp.items.length;
+      return `
+        <div class="review-card">
+          <div class="meta">
+            <strong>${escapeHtml(grp.title)}</strong>
+            <span>• ${c} review${c>1?'s':''}</span>
+            <span>• last ${new Date(latest.when).toLocaleDateString()}</span>
+          </div>
+          <p class="body">${escapeHtml(short)}</p>
+          <div style="margin-top:8px">
+            <button class="btn" onclick="goToAnimeFromReview(${aid})">Open Anime</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+    return;
+  }
+
+  // feed modes: newest / rating
+  let list = all.slice();
+  if(sort === 'rating'){
+    list.sort((a,b)=> (b.rating||0) - (a.rating||0) || (+new Date(b.when) - +new Date(a.when)));
+  }else{
+    list.sort((a,b)=> +new Date(b.when) - +new Date(a.when));
+  }
+  count.textContent = `(${list.length} total)`;
+
+  const sliced = list.slice(0, limit);
+  if(!sliced.length){
+    box.innerHTML = '<div class="review-card"><p class="body">No reviews yet. Be the first!</p></div>';
+    return;
+  }
+  box.innerHTML = sliced.map(r => `
+    <div class="review-card">
+      <div class="meta">
+        <strong>${escapeHtml(r.anime?.title || 'Unknown')}</strong>
+        <span>• ⭐ ${r.rating}/10</span>
+        <span>• ${new Date(r.when).toLocaleDateString()}</span>
+        <span>• by ${escapeHtml(r.uid || 'Anonymous')}</span>
+      </div>
+      ${r.title ? `<p class="title">${escapeHtml(r.title)}</p>` : ''}
+      <p class="body">${escapeHtml((r.body||'').length>420 ? r.body.slice(0,420)+'…' : (r.body||''))}</p>
+      <div style="margin-top:8px">
+        <button class="btn" onclick="goToAnimeFromReview(${r.anime?.id})">Open Anime</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+/* My Reviews (Menu) */
+function openMyReviews(){
+  if(!isLoggedIn()){
+    return toast('Please log in to use this', { action:{label:'Login', onClick: openLoginModal} });
+  }
+  closeAllModals();
+  const user = localStorage.getItem('andos_user');
+  const map  = get(REV_KEY,{});
+  const all  = Object.values(map).flat().filter(r=>r.uid===user).sort((a,b)=> +new Date(b.when)-+new Date(a.when));
+  const box  = document.getElementById('myReviewsList');
+  if(!all.length){ box.innerHTML = '<div class="review-card"><p class="body">No reviews yet.</p></div>'; }
+  else {
+    box.innerHTML = all.map(r=>`
+      <div class="review-card">
+        <div class="meta">
+          <strong>${escapeHtml(r.anime?.title||'Unknown')}</strong>
+          <span>• ⭐ ${r.rating}/10</span>
+          <span>• ${new Date(r.when).toLocaleDateString()}</span>
+        </div>
+        ${r.title?`<p class="title">${escapeHtml(r.title)}</p>`:''}
+        <p class="body">${escapeHtml(r.body)}</p>
+        <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn" onclick="goToAnimeFromReview(${r.anime?.id})">Open Anime</button>
+          <button class="btn" onclick="openEditFromMyReviews('${r.id}', ${r.anime?.id})">Edit</button>
+          <button class="btn ghost" onclick="deleteFromMyReviews('${r.id}', ${r.anime?.id})">Delete</button>
+        </div>
+      </div>
+    `).join('');
+  }
+  document.getElementById('myReviewsModal').classList.add('show');
+}
+function openEditFromMyReviews(rid, aid){
+  openModalById(aid).then(()=> startEditReview(rid));
+}
+function deleteFromMyReviews(rid, aid){
+  openModalById(aid).then(()=> deleteReview(rid));
+}
+
+/* ===== Page Initialization ===== */
+function goHome() {
+  document.getElementById('homeContent')?.classList.remove('hidden');
+  document.getElementById('searchSection')?.classList.add('hidden');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// Set the current year in the footer
+document.getElementById('year').textContent = new Date().getFullYear();
+
+// When DOM is fully loaded, initialize auth UI and load featured anime
+document.addEventListener('DOMContentLoaded', () => {
+  applyAuthUI();
+  loadFeatured();
+});
+</script>
+</body>
+</html>
